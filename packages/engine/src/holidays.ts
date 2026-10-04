@@ -22,7 +22,7 @@ export function easterSunday(year: number): ISODate {
 }
 
 const FIXED: ReadonlyArray<readonly [string, string]> = [
-  ['01-01', "Jour de l'an"],
+  ['01-01', 'Jour de l’an'],
   ['05-01', 'Fête du Travail'],
   ['05-08', 'Victoire 1945'],
   ['07-14', 'Fête nationale'],

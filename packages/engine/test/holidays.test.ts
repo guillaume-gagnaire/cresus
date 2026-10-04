@@ -15,7 +15,7 @@ describe('holidays', () => {
     expect(h2027.get('2027-03-29')).toBe('Lundi de Pâques');
     expect(h2027.get('2027-05-06')).toBe('Ascension');
     expect(h2027.get('2027-05-17')).toBe('Pentecôte');
-    expect(h2027.get('2027-01-01')).toBe("Jour de l'an");
+    expect(h2027.get('2027-01-01')).toBe('Jour de l’an');
     expect(holidays(2026).get('2026-05-14')).toBe('Ascension');
     expect(holidays(2026).get('2026-05-25')).toBe('Pentecôte');
     expect([...h2027.keys()]).toEqual([...h2027.keys()].sort());
