@@ -8,10 +8,7 @@ const TABS = [
   { to: '/expenses', label: 'Charges', icon: 'receipt' },
 ] as const satisfies ReadonlyArray<{ to: string; label: string; icon: IconName }>;
 
-/** `/` exact, les autres sections avec leurs sous-pages (`/clients/new`, `/clients/:id`). */
-function isActive(to: string): boolean {
-  return to === '/' ? route.path === '/' : route.path === to || route.path.startsWith(`${to}/`);
-}
+const isActive = (to: string): boolean => isRouteActive(route.path, to);
 </script>
 
 <template>
@@ -40,5 +37,7 @@ function isActive(to: string): boolean {
   padding: 8px 8px calc(10px + env(safe-area-inset-bottom, 0px));
   background: var(--ink);
   border-radius: 26px 26px 0 0;
+  /* Anneau de focus jaune : l’indigo n’atteint pas 3:1 sur le fond ink. */
+  --focus: var(--sun);
 }
 </style>

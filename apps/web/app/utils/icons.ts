@@ -61,5 +61,6 @@ const CATEGORY_ICONS: Readonly<Record<string, IconName>> = {
 
 /** Icône d'une catégorie de charge (« Autre » pour une catégorie inconnue ou absente). */
 export function categoryIcon(category: string | null): IconName {
-  return (category && CATEGORY_ICONS[category]) || 'cat-autre';
+  // `Object.hasOwn` : « constructor » ou « toString » ne doivent pas remonter le prototype.
+  return typeof category === 'string' && Object.hasOwn(CATEGORY_ICONS, category) ? CATEGORY_ICONS[category]! : 'cat-autre';
 }

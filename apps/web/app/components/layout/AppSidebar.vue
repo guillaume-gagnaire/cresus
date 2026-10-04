@@ -11,10 +11,7 @@ const NAV_ITEMS = [
   { to: '/expenses', label: 'Charges', icon: 'receipt' },
 ] as const satisfies ReadonlyArray<{ to: string; label: string; icon: IconName }>;
 
-/** `/` exact, les autres sections avec leurs sous-pages (`/clients/new`, `/clients/:id`). */
-function isActive(to: string): boolean {
-  return to === '/' ? route.path === '/' : route.path === to || route.path.startsWith(`${to}/`);
-}
+const isActive = (to: string): boolean => isRouteActive(route.path, to);
 
 const name = computed(() => auth.me?.user.firstName ?? '');
 const companyName = computed(() => auth.me?.user.companyName ?? null);
@@ -76,6 +73,8 @@ const latest = computed<{ amount: Cents; date: ISODate } | null>(() => null);
   gap: 32px;
   background: var(--ink);
   color: #fff;
+  /* Anneau de focus jaune : l’indigo n’atteint pas 3:1 sur le fond ink. */
+  --focus: var(--sun);
 }
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 6px; }
 .logo {

@@ -40,6 +40,12 @@ input[type=range]{width:100%;accent-color:var(--link);min-height:44px}
 /* Ajouts du socle */
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-text); font-size: 16px; }
-:focus-visible { outline: 3px solid var(--client-indigo); outline-offset: 2px; border-radius: 8px; }
+/* Le contour suit le rayon de l’élément. `--focus` vaut l’indigo, et le jaune sur les surfaces ink (sidebar, barre d’onglets). */
+:focus-visible { outline: 3px solid var(--focus, var(--client-indigo)); outline-offset: 2px; }
+/* Sur un élément plein ink posé sur la page crème, le contour indigo seul fait 2,7:1 face à l’élément : un filet jaune
+   (12:1 face à ink) le précède, l’indigo reste à 5,8:1 face à la page. */
+.btn.pri:focus-visible,
+.seg button[aria-pressed=true]:focus-visible,
+.chip[aria-pressed=true]:focus-visible { box-shadow: 0 0 0 2px var(--sun); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 button { font-family: inherit; }
