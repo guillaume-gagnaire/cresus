@@ -352,3 +352,55 @@ Tout ce que SPEC §1 classe hors périmètre, plus :
 - lien magique et réinitialisation du mot de passe par e-mail (« Mot de passe oublié » affiche « Bientôt disponible ») ;
 - notifications : les préférences d'alerte sont stockées, mais rien n'est envoyé ;
 - mode sombre.
+
+## 9. Serveur MCP et OAuth 2.1 (ajout en cours de développement)
+
+Demande utilisateur : « un serveur MCP utilisable depuis Claude Code, où l'on se connecte en OAuth2 avec son compte Cresus, pour gérer toute l'application ».
+
+### 9.1 Architecture
+
+- Le serveur MCP vit **dans l'API NestJS** (même image, même domaine), avec le SDK officiel `@modelcontextprotocol/sdk` (≥ 1.32, compatible zod 4 et Express 5).
+- Transport **Streamable HTTP** sur `/mcp` (POST, GET et DELETE), en mode sans session : un transport par requête.
+- L'API est son propre **serveur d'autorisation OAuth 2.1**, via le routeur du SDK (`mcpAuthRouter`) monté à la racine. Il expose :
+  - `/.well-known/oauth-authorization-server` (RFC 8414) et `/.well-known/oauth-protected-resource` (RFC 9728) ;
+  - `/authorize`, `/token`, `/register` (enregistrement dynamique de clients, RFC 7591, clients publics sans secret) et `/revoke`.
+- Toutes ces routes sont **hors du préfixe `/api`**. Elles sont montées comme middlewares Express avant les routes Nest et le repli SPA. En dev, Nuxt les proxifie vers l'API, comme `/api`.
+- La variable `PUBLIC_URL` (obligatoire en production, `http://localhost:3000` en dev) fournit l'émetteur (`issuer`) et l'URL de la ressource protégée (`${PUBLIC_URL}/mcp`).
+
+### 9.2 Parcours d'autorisation
+
+1. Claude Code découvre les métadonnées, s'enregistre via `/register`, puis ouvre le navigateur sur `/authorize` (code + PKCE S256 obligatoire, scope `cresus`).
+2. `/authorize` enregistre une demande en attente (table `oauth_requests`, 10 min) et redirige vers la page front **`/oauth/consent?request=<id>`**.
+3. Si l'utilisateur n'est pas connecté, la page de consentement l'envoie sur `/login?redirect=…`, qui le ramène après connexion. Le paramètre `redirect` n'accepte qu'un chemin relatif commençant par `/` (jamais `//`).
+4. L'écran affiche : « **{client_name}** veut accéder à ton compte Ma Tréso », avec l'hôte de redirection, et les boutons « Autoriser » et « Refuser ». Il appelle `POST /api/oauth/requests/:id/approve` ou `…/deny` (session requise). L'API renvoie `{ redirectUrl }` : `redirect_uri?code=…&state=…`, ou `?error=access_denied&state=…`. Le front fait la redirection.
+5. `/token` échange le code (usage unique, 5 min, PKCE vérifié) contre un jeton d'accès opaque (1 h) et un jeton de rafraîchissement (30 jours, rotation à chaque usage).
+6. Seuls les hachages SHA-256 des codes et jetons sont stockés.
+7. Redirections acceptées : `http://localhost:*`, `http://127.0.0.1:*` ou `https://…` (pas de schéma personnalisé).
+
+Tables : `oauth_clients` (client_id, client_name, redirect_uris, métadonnées, created_at), `oauth_requests`, `oauth_codes` et `oauth_tokens` (access_hash, refresh_hash, client_id, user_id, scope, access_expires_at, refresh_expires_at, revoked_at). Toutes les tables liées à un utilisateur ont une suppression en cascade.
+
+### 9.3 Outils MCP
+
+- Tous les outils agissent pour l'utilisateur du jeton (`req.auth.extra.userId`) et réutilisent les services de l'API et le moteur.
+- Montants en **euros** (nombres, 2 décimales au plus, convertis en centimes en interne), dates `YYYY-MM-DD`, mois `YYYY-MM`.
+- La date du jour est celle du serveur, qui tourne avec `TZ=Europe/Paris`.
+- Erreurs métier : résultat `isError` avec le message français de l'API.
+
+| Outil | Rôle |
+| --- | --- |
+| `get_overview` | Projection sur 15 mois (encaissements, charges, résultat, solde, état), synthèse et solde actuel. En mode micro : « pour toi », jauge du plafond et revenu lissé. |
+| `get_month` | Détail d'un mois : encaissements (client, mois facturé, date, montant, coût des congés) et charges. |
+| `get_profile` · `update_profile` | Profil (statut juridique, net mensuel, options micro, pistes, alertes). Le rôle n'est jamais modifiable. |
+| `set_balance` | Nouveau solde du compte. |
+| `list_clients` · `create_client` · `update_client` · `delete_client` | Missions et clients (avec tarifs). |
+| `add_rate` · `delete_rate` | Tarifs historisés (date existante = remplacement, dernier tarif protégé). |
+| `list_leaves` · `add_leaves` · `delete_leaves` | Congés (périodes regroupées, coût, mois d'impact). |
+| `list_charges` · `create_charge` · `update_charge` · `delete_charge` | Charges. |
+| `export_data` | Sauvegarde JSON complète. |
+
+### 9.4 Connexion depuis Claude Code
+
+```
+claude mcp add --transport http cresus https://cresus.gagnaire.dev/mcp
+```
+Puis, dans Claude Code, `/mcp` › « Authenticate » ouvre le navigateur sur l'écran de consentement.

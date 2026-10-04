@@ -2252,7 +2252,8 @@ COPY apps/web/package.json apps/web/
 RUN npm ci --omit=dev --ignore-scripts -w @matreso/api -w @matreso/engine
 
 FROM node:24-alpine AS runtime
-ENV NODE_ENV=production PORT=3000 WEB_DIST=/app/web
+RUN apk add --no-cache tzdata
+ENV NODE_ENV=production PORT=3000 WEB_DIST=/app/web TZ=Europe/Paris
 WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/packages/engine/package.json ./packages/engine/package.json
@@ -2295,7 +2296,7 @@ Ajouter à `docker-compose.yml` :
 
 Créer `scripts/e2e-prod.mjs`, avec le script racine `"e2e:prod": "node scripts/e2e-prod.mjs"`. Le script Node doit, sans dépendance ajoutée :
 1. lancer `npm run build` à la racine (`child_process.spawnSync`, `stdio: 'inherit'`, `shell: true`) ;
-2. démarrer `node apps/api/dist/main.js` (`spawn`) avec l'environnement `NODE_ENV=production`, `PORT=3100`, `DATABASE_URL=pglite:memory`, `SESSION_SECRET=e2e-prod-secret-e2e-prod-secret`, `WEB_DIST=<chemin absolu de apps/web/.output/public>`, `SEED_DEMO=true`, `COOKIE_SECURE=false`, `AUTH_RATE_LIMIT=10000`, `WEBAUTHN_ORIGIN=http://localhost:3100` ;
+2. démarrer `node apps/api/dist/main.js` (`spawn`) avec l'environnement `NODE_ENV=production`, `PORT=3100`, `DATABASE_URL=pglite:memory`, `SESSION_SECRET=e2e-prod-secret-e2e-prod-secret`, `PUBLIC_URL=http://localhost:3100`, `WEB_DIST=<chemin absolu de apps/web/.output/public>`, `SEED_DEMO=true`, `COOKIE_SECURE=false`, `AUTH_RATE_LIMIT=10000`, `WEBAUTHN_ORIGIN=http://localhost:3100` ;
 3. attendre que `GET http://localhost:3100/api/health` réponde 200 (boucle `fetch`, 60 s au plus) ;
 4. lancer `npx playwright test` dans `apps/web`, avec `E2E_BASE_URL=http://localhost:3100` ;
 5. arrêter le serveur dans tous les cas (`finally`) et renvoyer le code de sortie de Playwright.
@@ -2376,7 +2377,8 @@ Demande utilisateur ajoutée en cours d'exécution : déployer l'app sur l'insta
   - `DATABASE_URL` = l'URL interne de la base PostgreSQL du même projet ;
   - `SESSION_SECRET` = 48 octets aléatoires (base64url), générés au moment du déploiement et jamais commités ;
   - `WEBAUTHN_RP_ID=cresus.gagnaire.dev`, `WEBAUTHN_ORIGIN=https://cresus.gagnaire.dev`, `WEBAUTHN_RP_NAME=Ma Tréso` ;
-  - `COOKIE_SECURE=true`, `SEED_DEMO=false`, `AUTH_RATE_LIMIT=10`.
+  - `COOKIE_SECURE=true`, `SEED_DEMO=false`, `AUTH_RATE_LIMIT=10` ;
+  - `PUBLIC_URL=https://cresus.gagnaire.dev` (émetteur OAuth et ressource MCP, Tasks 38–40), `TZ=Europe/Paris`.
 - Healthcheck Coolify sur `/api/health`.
-- Vérification : déploiement réussi, `https://cresus.gagnaire.dev/api/health` renvoie `{"status":"ok","db":"ok"}`, la page d'accueil répond 200 (repli SPA), et la première inscription crée bien un compte `ADMIN` (Task 36).
+- Vérification : `https://cresus.gagnaire.dev/.well-known/oauth-authorization-server` répond (MCP prêt pour `claude mcp add --transport http cresus https://cresus.gagnaire.dev/mcp`) ; déploiement réussi, `https://cresus.gagnaire.dev/api/health` renvoie `{"status":"ok","db":"ok"}`, la page d'accueil répond 200 (repli SPA), et la première inscription crée bien un compte `ADMIN` (Task 36).
 - Le push de la branche sur GitHub et la création des ressources Coolify sont des actions externes demandées explicitement par l'utilisateur.
