@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Calendrier et congés</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF7EC}
+*{box-sizing:border-box}
+a{color:#4B4BE0;font-weight:600}a:hover{color:#3434B8}
+h1,h2,h3{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif}
+.num{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif;font-variant-numeric:tabular-nums;font-weight:700}
+.nav a{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px;border-radius:999px;color:#E9E5F5;text-decoration:none;font-size:16px;font-weight:600}
+.nav a:hover{background:#342C4A;color:#fff}
+.nav a.on{background:#FFD84D;color:#1F1A2E}
+.card{background:#fff;border:1.5px solid #F0E6D6;border-radius:26px;box-shadow:0 4px 0 rgba(31,26,46,.05)}
+.lbl{font-size:15px;color:#6B6478;font-weight:600}
+.btn{min-height:50px;padding:0 22px;border-radius:999px;border:2px solid #1F1A2E;background:#fff;font:700 16px Figtree,system-ui,sans-serif;color:#1F1A2E;cursor:pointer}
+.btn.pri{background:#1F1A2E;color:#fff}
+.tip{display:flex;gap:16px;align-items:flex-start;padding:20px 22px;border-radius:22px;background:#FFF4C2;color:#4A3B00;font-size:16px;line-height:1.55}
+.ico{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex:none}
+.step{display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:18px;background:#fff;border:1.5px solid #F0E6D6;min-width:150px;flex:1 1 150px}
+.step b{font-family:'Bricolage Grotesque',Figtree,sans-serif;font-size:18px}
+.step span{font-size:14px;color:#6B6478}
+.arr{align-self:center;color:#B9B2CC;font-size:24px;font-weight:700}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font-size:14px;font-weight:600;color:#6B6478;padding:14px 18px;border-bottom:1.5px solid #F0E6D6;white-space:nowrap}
+td{padding:16px 18px;border-bottom:1px solid #F5EEE3;font-size:16px;white-space:nowrap}
+.field{display:flex;flex-direction:column;gap:8px;font-size:15px;font-weight:600;color:#3B3550}
+.field input,.field select{min-height:50px;padding:0 16px;border-radius:16px;border:2px solid #E8DDCB;font:500 16px Figtree,system-ui,sans-serif;color:#1F1A2E;background:#FFFCF7}
+input[type=range]{width:100%;accent-color:#4B4BE0;min-height:44px}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; font-family: Figtree, 'Helvetica Neue', system-ui, sans-serif; font-size: 16px; color: #1F1A2E; background: #FFF7EC">
+<aside style="flex: 1 1 260px; max-width: 100%; padding: 28px 18px; display: flex; flex-direction: column; gap: 32px; background: #1F1A2E; color: #fff">
+<div style="display: flex; align-items: center; gap: 12px; padding: 0 6px">
+<div style="width: 48px; height: 48px; border-radius: 16px; background: #FFD84D; color: #1F1A2E; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 18px; transform: rotate(-6deg)">GD</div>
+<div style="display: flex; flex-direction: column"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px">Ma Tréso</span><span style="font-size: 14px; color: #B9B2CC">Gagnaire Développement</span></div>
+</div>
+<nav class="nav" aria-label="Navigation principale" style="display: flex; flex-direction: column; gap: 4px">
+<a href="Main.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5"></path><path d="M4 19h16"></path><path d="m8 15 4-4 3 3 5-6"></path></svg>Tableau de bord</a>
+<a href="Clients.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7"></path><path d="M18 14.8c1.9.7 3.1 2.6 3.5 5.2"></path></svg>Clients &amp; missions</a>
+<a href="Calendrier.dc.html" class="on" aria-current="page"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>Calendrier &amp; congés</a>
+<a href="Charges.dc.html"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Charges</a>
+</nav>
+<div style="margin-top: auto; padding: 18px; border-radius: 22px; background: #2E2742; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 14px; color: #B9B2CC; font-weight: 600">Sur le compte</span>
+<span class="num" style="font-size: 30px">48 320 €</span>
+<span style="font-size: 13px; color: #B9B2CC">Mis à jour le 4 oct. 2026</span>
+</div>
+</aside>
+<main style="flex: 999 1 560px; min-width: 0; padding: 40px 44px 64px">
+<div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px">
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span class="lbl">Simulation sur 15 mois · oct. 2026 → déc. 2027</span>
+<h1 style="margin: 0; font-size: 46px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05">Tes vacances, ta tréso</h1>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center"></div>
+</header>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px"><div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 8px; background: #FFF4C2; border-color: transparent"><span class="lbl" style="color: #3B3550">Jours posés</span><span class="num" style="font-size: 34px; line-height: 1; color: #1F1A2E">{{nDays}} j</span><span style="font-size: 14px; color: #4E4762">{{nGroups}}</span></div><div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 8px; background: #FFE1CC; border-color: transparent"><span class="lbl" style="color: #3B3550">CA perdu</span><span class="num" style="font-size: 34px; line-height: 1; color: #1F1A2E">{{lost}}</span><span style="font-size: 14px; color: #4E4762">encaissé en moins, plus tard</span></div><div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 8px; background: {{low.bg}}; border-color: transparent"><span class="lbl" style="color: #3B3550">Point le plus bas</span><span class="num" style="font-size: 34px; line-height: 1; color: {{low.c}}">{{low.v}}</span><span style="font-size: 14px; color: #4E4762">{{low.m}}</span></div><div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 8px; background: {{risk.bg}}; border-color: transparent"><span class="lbl" style="color: #3B3550">Mois dans le rouge</span><span class="num" style="font-size: 34px; line-height: 1; color: {{risk.c}}">{{risk.n}}</span><span style="font-size: 14px; color: #4E4762">{{risk.sub}}</span></div></div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start">
+<section class="card" style="flex: 1 1 520px; min-width: 0; padding: 26px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
+<button class="btn" aria-label="Mois précédent" onClick="{{prev}}" style="width: 50px; padding: 0; display: flex; align-items: center; justify-content: center; border-color: #E8DDCB"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg></button>
+<h2 style="margin: 0; font-size: 24px; font-weight: 800; text-transform: capitalize">{{monthLbl}}</h2>
+<button class="btn" aria-label="Mois suivant" onClick="{{next}}" style="width: 50px; padding: 0; display: flex; align-items: center; justify-content: center; border-color: #E8DDCB"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap"><span style="font-size: 15px; color: #6B6478; font-weight: 600">Touche un jour pour le poser chez :</span><div style="display: flex; flex-wrap: wrap; gap: 6px"><sc-for list="{{modes}}" as="o" hint-placeholder-count="3"><button aria-pressed="{{o.pressed}}" onClick="{{o.pick}}" style="min-height: 44px; padding: 0 16px; border-radius: 999px; border: 2px solid; font: 700 14px Figtree, sans-serif; cursor: pointer; {{o.st}}">{{o.label}}</button></sc-for></div></div>
+<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; font-size: 13px; font-weight: 700; color: #6B6478; text-align: center"><span>Lun.</span><span>Mar.</span><span>Mer.</span><span>Jeu.</span><span>Ven.</span><span>Sam.</span><span>Dim.</span></div>
+<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="35"><button onClick="{{c.tap}}" aria-label="{{c.aria}}" aria-pressed="{{c.pressed}}" style="min-height: 64px; border-radius: 16px; padding: 8px; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; font: 700 16px Figtree, sans-serif; text-align: left; cursor: pointer; {{c.st}}"><span>{{c.n}}</span><span style="font-size: 11px; font-weight: 700; opacity: .85">{{c.tag}}</span></button></sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; font-weight: 600; color: #3B3550">
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 5px; background: #ECEBFF; border: 2px solid #4B4BE0"></span>Client A</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 5px; background: #FFEBDD; border: 2px solid #FF8A3D"></span>Client B</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 5px; background: #F1EAFE; border: 2px dashed #9B6BFF"></span>Client C (piste)</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 5px; background: #FFD84D"></span>Vacances</span>
+</div>
+</section>
+
+<section class="card" style="flex: 1 1 400px; min-width: 0; padding: 26px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 24px; font-weight: 800">Poser des vacances</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<label class="field">Du<input type="date" value="{{from}}" onChange="{{onFrom}}"></label>
+<label class="field">Au<input type="date" value="{{to}}" onChange="{{onTo}}"></label>
+</div>
+<div class="field">Chez qui&#160;?<div style="display: flex; flex-wrap: wrap; gap: 6px"><sc-for list="{{modes}}" as="o" hint-placeholder-count="3"><button aria-pressed="{{o.pressed}}" onClick="{{o.pick}}" style="min-height: 44px; padding: 0 16px; border-radius: 999px; border: 2px solid; font: 700 14px Figtree, sans-serif; cursor: pointer; {{o.st}}">{{o.label}}</button></sc-for></div></div>
+<button class="btn pri" onClick="{{addRange}}">Ajouter et simuler</button>
+<sc-if value="{{hasFlash}}" hint-placeholder-val="{{false}}"><div role="status" style="padding: 14px 16px; border-radius: 16px; font-size: 15px; font-weight: 600; {{flash.st}}">{{flash.t}}</div></sc-if>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{groupsL}}" as="g" hint-placeholder-count="3">
+<div style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid #F5EEE3">
+<div class="ico" style="width: 40px; height: 40px; border-radius: 13px; background: #FFD84D; color: #1F1A2E"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></div>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<div style="display: flex; justify-content: space-between; gap: 10px"><span style="font-weight: 700">{{g.title}}</span><span class="num" style="color: #9A3F08">{{g.lost}}</span></div>
+<span style="font-size: 14px; color: #6B6478">{{g.sub}}</span>
+<span style="font-size: 14px; color: #3B3550; font-weight: 600">{{g.imp}}</span>
+</div>
+<button onClick="{{g.del}}" aria-label="{{g.aria}}" style="flex: none; width: 44px; height: 44px; border-radius: 12px; border: 0; background: transparent; color: #9A93AC; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"></path></svg></button>
+</div>
+</sc-for>
+</div>
+</section>
+</div>
+
+<section class="card" style="padding: 28px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font-size: 26px; font-weight: 800">Ce que tes vacances font à chaque mois</h2><span style="font-size: 16px; color: #6B6478">Rentrées moins charges. L’argent manque quand le client aurait payé, selon son délai.</span></div>
+<label style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 18px; border-radius: 999px; background: #F1EAFE; font-weight: 600; cursor: pointer"><input type="checkbox" checked="{{withPiste}}" onChange="{{togglePiste}}" style="width: 20px; height: 20px; accent-color: #6A3FC9">Compter la piste Client C</label>
+</div>
+<div role="status" style="padding: 16px 20px; border-radius: 18px; font-size: 17px; font-weight: 600; line-height: 1.5; {{alert.st}}">{{alert.t}}</div>
+<div style="overflow-x: auto"><div style="min-width: 760px; display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{rbars}}" as="b" hint-placeholder-count="15">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; border-radius: 14px; {{b.bg}}">
+<span class="num" style="font-size: 12px; {{b.lc}}">{{b.lbl}}</span>
+<div style="height: 180px; width: 80%; display: flex; flex-direction: column">
+<div style="flex: 1; display: flex; align-items: flex-end; gap: 3px"><div style="flex: 1; height: {{b.up0}}px; border-radius: 6px 6px 0 0; background: #D9D2C5"></div><div style="flex: 1; height: {{b.up1}}px; border-radius: 6px 6px 0 0; background: #2E9E6A"></div></div>
+<div style="height: 2px; background: #1F1A2E"></div>
+<div style="flex: 1; display: flex; align-items: flex-start; gap: 3px"><div style="flex: 1; height: {{b.dn0}}px; border-radius: 0 0 6px 6px; background: #D9D2C5"></div><div style="flex: 1; height: {{b.dn1}}px; border-radius: 0 0 6px 6px; background: #E5484D"></div></div>
+</div>
+<span style="font-size: 12px; font-weight: 700; color: #3B3550">{{b.m}}</span>
+</div>
+</sc-for>
+</div></div>
+<div style="display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; font-weight: 600; color: #3B3550">
+<span style="display: flex; align-items: center; gap: 8px"><span style="width: 14px; height: 14px; border-radius: 4px; background: #D9D2C5"></span>Sans vacances</span>
+<span style="display: flex; align-items: center; gap: 8px"><span style="width: 14px; height: 14px; border-radius: 4px; background: #2E9E6A"></span>Avec vacances : positif</span>
+<span style="display: flex; align-items: center; gap: 8px"><span style="width: 14px; height: 14px; border-radius: 4px; background: #E5484D"></span>Avec vacances : dans le rouge</span>
+<span style="display: flex; align-items: center; gap: 8px"><span style="width: 14px; height: 14px; border-radius: 4px; background: #FFE6CF"></span>Mois que tes vacances font passer dans le rouge</span>
+</div>
+</section>
+
+<section class="card" style="overflow: hidden">
+<div style="padding: 24px 28px 10px"><h2 style="margin: 0; font-size: 26px; font-weight: 800">Mois par mois</h2></div>
+<div style="overflow-x: auto"><table>
+<thead><tr><th>Mois</th><th style="text-align: right">Encaissé sans vacances</th><th style="text-align: right">Avec vacances</th><th style="text-align: right">Coût des vacances</th><th style="text-align: right">Charges</th><th style="text-align: right">Résultat du mois</th><th style="text-align: right">Solde fin de mois</th><th>État</th></tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="15"><tr style="{{r.bg}}">
+<td style="font-weight: 700; text-transform: capitalize">{{r.m}}</td>
+<td class="num" style="text-align: right; color: #6B6478">{{r.base}}</td>
+<td class="num" style="text-align: right">{{r.withV}}</td>
+<td class="num" style="text-align: right; color: #9A3F08">{{r.cost}}</td>
+<td style="text-align: right"><div style="display: flex; flex-direction: column; align-items: flex-end"><span class="num">{{r.out}}</span><span style="font-size: 12px; color: #6B6478">{{r.outT}}</span></div></td>
+<td class="num" style="text-align: right; font-size: 17px; {{r.resC}}">{{r.res}}</td><td class="num" style="text-align: right; font-size: 17px; {{r.balC}}">{{r.bal}}</td>
+<td><span style="display: inline-flex; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; {{r.badgeSt}}">{{r.badge}}</span></td>
+</tr></sc-for>
+</tbody></table></div>
+</section>
+<div class="tip"><div class="ico" style="background: #FFD84D; color: #1F1A2E; width: 44px; height: 44px; border-radius: 14px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"></path><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"></path></svg></div><div style="display: flex; flex-direction: column; gap: 4px"><b style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px">Pourquoi l’impact arrive plus tard&#160;?</b><span>Un jour de vacances coûte le TJM du client que tu aurais vu ce jour-là. Mais l’argent ne manque qu’au moment où ce client t’aurait payé : 30 jours fin de mois pour le Client A, 45 jours plus ~10 jours de retard pour le Client B. Des vacances d’août se sentent donc en septembre ou en octobre. Le forfait mensuel du Client D, lui, ne baisse pas pendant tes congés.</span></div></div>
+<p style="margin: 0; font-size: 14px; color: #6B6478">Sorties : les charges de l’onglet Charges (salaire, cotisations, provision impôts…). Montants HT. Simulation indicative.</p>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2600}}'>
+class Component extends DCLogic {
+  state = { offs: null, mi: 2, mode: 'all', from: '2027-02-15', to: '2027-02-19', s0: 48320, seuil: 5000, piste: true, flash: null };
+  renderVals() {
+    const HOL = ['2026-11-11', '2026-12-25', '2027-01-01', '2027-03-29', '2027-05-06', '2027-05-17', '2027-07-14'];
+    const HOLN = { '2026-11-11': 'Armistice', '2026-12-25': 'Noël', '2027-01-01': 'Jour de l’an', '2027-03-29': 'Lundi de Pâques', '2027-05-06': 'Ascension', '2027-05-17': 'Pentecôte', '2027-07-14': 'Fête nationale' };
+    const DEL = { rec: 0, '30': 30, '45': 45, '30fdm': 30, '60': 60 };
+    const MS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const ML = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    const P = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const Y = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const dl = (d) => (d.getDate() === 1 ? '1er' : d.getDate()) + ' ' + MS[d.getMonth()];
+    const fmt = (n) => (n < 0 ? '−' : '') + (Math.round(Math.abs(n) / 10) * 10).toLocaleString('fr-FR') + ' €';
+    const win = []; for (let i = 0; i < 15; i++) win.push([2026 + Math.floor((9 + i) / 12), (9 + i) % 12]);
+    const CL = [
+      { code: 'A', name: 'Client A', color: '#4B4BE0', mode: 'tjm', days: [0, 4], rates: [{ from: '2026-10-01', v: 650 }, { from: '2027-01-01', v: 700 }], start: '2026-10-01', end: '2027-05-31', delai: '30fdm', retard: 0, piste: false },
+      { code: 'B', name: 'Client B', color: '#FF8A3D', mode: 'tjm', days: [1, 2, 3], rates: [{ from: '2026-03-02', v: 550 }, { from: '2026-09-01', v: 600 }], start: '2026-03-02', end: '', delai: '45', retard: 10, piste: false },
+      { code: 'C', name: 'Client C', color: '#9B6BFF', mode: 'tjm', days: [0, 4], rates: [{ from: '2027-07-01', v: 700 }], start: '2027-07-01', end: '2027-12-31', delai: '30', retard: 5, piste: true },
+      { code: 'D', name: 'Client D', color: '#2E9E6A', mode: 'forfait', days: [], rates: [{ from: '2026-11-01', v: 1200 }, { from: '2027-04-01', v: 1350 }], start: '2026-11-01', end: '', delai: '30', retard: 0, piste: false }
+    ];
+    const rateAt = (c, dt) => { let v = 0; [...c.rates].sort((a, b) => a.from < b.from ? -1 : 1).forEach((r) => { if (P(r.from) <= dt) v = r.v; }); return v; };
+    const dow = (dt) => (dt.getDay() + 6) % 7;
+    const whoOn = (dt, withPiste) => CL.find((c) => c.mode !== 'forfait' && (withPiste || !c.piste) && c.days.includes(dow(dt)) && dt >= P(c.start) && (!c.end || dt <= P(c.end)));
+    const hits = (offs, iso, code) => offs[iso] && (offs[iso] === 'all' || offs[iso] === code);
+    const payMonth = (c, y, m) => { const inv = new Date(y, m + 1, 0); let due;
+      if (c.delai === '30fdm') { const t = new Date(inv.getTime() + 30 * 864e5); due = new Date(t.getFullYear(), t.getMonth() + 1, 0); } else due = new Date(inv.getTime() + DEL[c.delai] * 864e5);
+      const cash = new Date(due.getTime() + c.retard * 864e5); return win.findIndex(([yy, mm]) => yy === cash.getFullYear() && mm === cash.getMonth()); };
+    // revenus: pour chaque mois travaillé, CA par client, avec et sans congés
+    const cashModel = (offs, withPiste) => {
+      const base = win.map(() => 0), withV = win.map(() => 0), lostByWork = {};
+      CL.forEach((c) => { if (c.piste && !withPiste) return;
+        for (let k = -8; k < 15; k++) { const y = 2026 + Math.floor((9 + k) / 12), m = ((9 + k) % 12 + 12) % 12, last = new Date(y, m + 1, 0).getDate();
+          let full = 0, off = 0;
+          for (let d = 1; d <= last; d++) { const dt = new Date(y, m, d), iso = Y(dt); if (dt < P(c.start) || (c.end && dt > P(c.end))) continue;
+            if (c.mode === 'forfait') { full += rateAt(c, dt) / last; continue; }
+            if (!c.days.includes(dow(dt)) || HOL.includes(iso)) continue; const r = rateAt(c, dt); full += r; if (hits(offs, iso, c.code)) off += r; }
+          if (!full) continue; const j = payMonth(c, y, m); if (j < 0) continue;
+          base[j] += Math.round(full); withV[j] += Math.round(full - off); } });
+      return { base, withV };
+    };
+    const CH0 = [
+      { n: 'Salaire (net)', v: 4000, f: 'm', cat: 'Toi' }, { n: 'Cotisations sociales', v: 3200, f: 'm', cat: 'Social' },
+      { n: 'Provision impôts', v: 850, f: 'm', cat: 'Impôts' }, { n: 'Véhicule (LLD)', v: 420, f: 'm', cat: 'Véhicule' },
+      { n: 'Expert-comptable', v: 180, f: 'm', cat: 'Services' }, { n: 'Prévoyance et mutuelle', v: 140, f: 'm', cat: 'Social' },
+      { n: 'Logiciels', v: 95, f: 'm', cat: 'Outils' }, { n: 'Banque pro', v: 29, f: 'm', cat: 'Banque' },
+      { n: 'Assurance RC Pro', v: 660, f: 'y', m: 0, cat: 'Assurance' }, { n: 'CFE', v: 600, f: 'y', m: 11, cat: 'Impôts' }
+    ];
+    const OUT = (ch) => { const L = Array.isArray(ch) ? ch : CH0; return win.map(([y, m]) => { const items = L.filter((c) => c.f === 'm' || c.m === m); return { o: items.reduce((a, c) => a + Number(c.v), 0), t: items.filter((c) => c.f !== 'm').map((c) => c.n), items }; }); };
+    const payInfo = (c, y, m) => { const inv = new Date(y, m + 1, 0); let due;
+      if (c.delai === '30fdm') { const t = new Date(inv.getTime() + 30 * 864e5); due = new Date(t.getFullYear(), t.getMonth() + 1, 0); } else due = new Date(inv.getTime() + DEL[c.delai] * 864e5);
+      const cash = new Date(due.getTime() + c.retard * 864e5); return { cash, k: win.findIndex(([yy, mm]) => yy === cash.getFullYear() && mm === cash.getMonth()) }; };
+    const income = (offs, withPiste) => { const res = win.map(() => []);
+      CL.forEach((c) => { if (c.piste && !withPiste) return;
+        for (let k = -8; k < 15; k++) { const y = 2026 + Math.floor((9 + k) / 12), m = ((9 + k) % 12 + 12) % 12, last = new Date(y, m + 1, 0).getDate(); let full = 0, off = 0;
+          for (let d = 1; d <= last; d++) { const dt = new Date(y, m, d), iso = Y(dt); if (dt < P(c.start) || (c.end && dt > P(c.end))) continue;
+            if (c.mode === 'forfait') { full += rateAt(c, dt) / last; continue; }
+            if (!c.days.includes(dow(dt)) || HOL.includes(iso)) continue; const r = rateAt(c, dt); full += r; if (hits(offs, iso, c.code)) off += r; }
+          if (!full) continue; const pi = payInfo(c, y, m); if (pi.k < 0) continue;
+          res[pi.k].push({ c, src: ML[m], date: pi.cash, amt: Math.round(full - off), lost: Math.round(off) }); } });
+      return res; };
+    const seedOffs = () => { const o = {}; const add = (a, b, w) => { for (let d = P(a); d <= P(b); d = new Date(d.getTime() + 864e5)) if (dow(d) < 5 && !HOL.includes(Y(d))) o[Y(d)] = w; };
+      add('2026-12-24', '2026-12-31', 'all'); add('2027-05-07', '2027-05-07', 'A'); add('2027-08-02', '2027-08-20', 'all'); return o; };
+    // regroupe les jours de congé en périodes
+    const groups = (offs, withPiste) => { const ds = Object.keys(offs).sort(); const g = [];
+      ds.forEach((iso) => { const last = g[g.length - 1]; const dt = P(iso);
+        if (last && last.who === offs[iso]) { let p = new Date(P(last.to).getTime() + 864e5), gap = false; while (p < dt) { const pi = Y(p); if (dow(p) < 5 && !HOL.includes(pi)) { gap = true; break; } p = new Date(p.getTime() + 864e5); } if (!gap) { last.to = iso; last.days.push(iso); return; } }
+        g.push({ from: iso, to: iso, who: offs[iso], days: [iso] }); });
+      return g.map((x) => { let lost = 0; const imp = {}; x.days.forEach((iso) => { const dt = P(iso); const c = whoOn(dt, withPiste); if (!c || !hits(offs, iso, c.code)) return; const r = rateAt(c, dt); lost += r; const j = payMonth(c, dt.getFullYear(), dt.getMonth()); if (j >= 0) imp[j] = (imp[j] || 0) + r; });
+        return { ...x, lost, imp }; }); };
+
+    const S = this.state || {};
+    const seed = () => { const o = {}; const add = (a, b, w) => { for (let d = P(a); d <= P(b); d = new Date(d.getTime() + 864e5)) if (dow(d) < 5 && !HOL.includes(Y(d))) o[Y(d)] = w; };
+      add('2026-12-24', '2026-12-31', 'all'); add('2027-05-07', '2027-05-07', 'A'); add('2027-08-02', '2027-08-20', 'all'); return o; };
+    const offs = S.offs || seed();
+    const mi = S.mi ?? 2, mode = S.mode || 'all', withPiste = S.piste !== false, s0 = Number(S.s0 ?? 48320), D = Number(S.div ?? 50000), seuil = Number(S.seuil ?? 5000);
+    const WHO = { all: 'Tous', A: 'Client A', B: 'Client B' };
+    const { base, withV } = cashModel(offs, withPiste), out = OUT(D);
+    let b0 = s0, b1 = s0; const bal0 = [], bal1 = [];
+    win.forEach((_, k) => { b0 += base[k] - out[k].o; b1 += withV[k] - out[k].o; bal0.push(b0); bal1.push(b1); });
+    const res0 = win.map((_, k) => base[k] - out[k].o), res1 = win.map((_, k) => withV[k] - out[k].o);
+    const sk = (k) => bal1[k] < 0 ? 'neg' : res1[k] < 0 ? 'low' : 'ok';
+    const mname = (k) => ML[win[k][1]] + ' ' + win[k][0];
+    const cut = (k) => MS[win[k][1]] + (win[k][1] === 0 || k === 0 ? ' ' + String(win[k][0]).slice(2) : '');
+    const neg = win.map((_, k) => k).filter((k) => bal1[k] < 0), low = win.map((_, k) => k).filter((k) => bal1[k] >= 0 && res1[k] < 0);
+    const caused = win.map((_, k) => k).filter((k) => res1[k] < 0 && res0[k] >= 0);
+    const list = (ks) => ks.map(mname).join(', ');
+    const minB = Math.min(...bal1);
+    let alert;
+    if (neg.length) alert = { st: 'background: #FBD2CE; color: #7A1A13', t: 'Attention : avec tes vacances, le compte passe à découvert en ' + list(neg) + '.' };
+    else if (caused.length) alert = { st: 'background: #FFE6CF; color: #6E2E05', t: 'Tes vacances font passer ' + list(caused) + ' dans le rouge : les rentrées ne couvrent plus les charges. Ton solde absorbe, il ne descend jamais sous ' + fmt(minB) + '.' };
+    else if (low.length) alert = { st: 'background: #FFF4C2; color: #5A4A00', t: list(low) + ' dans le rouge, même sans vacances, à cause des délais de paiement. Ton solde absorbe.' };
+    else alert = { st: 'background: #E7F6EC; color: #1E6B3A', t: 'Tous les mois restent dans le positif, vacances comprises.' };
+    const mxr = Math.max(1, ...res0.map(Math.abs), ...res1.map(Math.abs));
+    const hh = (x) => Math.round(Math.abs(x) / mxr * 86);
+    const rbars = win.map((_, k) => ({ m: cut(k), lbl: (res1[k] >= 0 ? '+' : '−') + (Math.abs(res1[k]) / 1000).toFixed(1).replace('.', ',') + 'k', lc: res1[k] < 0 ? 'color: #C2272D' : 'color: #1E6B3A',
+      up0: res0[k] > 0 ? hh(res0[k]) : 0, dn0: res0[k] < 0 ? hh(res0[k]) : 0, up1: res1[k] > 0 ? hh(res1[k]) : 0, dn1: res1[k] < 0 ? hh(res1[k]) : 0,
+      bg: bal1[k] < 0 ? 'background: #FBD2CE' : caused.includes(k) ? 'background: #FFE6CF' : '' }));
+    const rows = win.map((_, k) => { const s = sk(k), c = base[k] - withV[k];
+      return { m: mname(k), base: fmt(base[k]), withV: fmt(withV[k]), cost: c ? '−' + fmt(c) : '—', out: '−' + fmt(out[k].o), outT: out[k].t.join(', '), bal: fmt(bal1[k]),
+        res: (res1[k] >= 0 ? '+' : '') + fmt(res1[k]), resC: res1[k] < 0 ? 'color: #C2272D' : 'color: #1E6B3A',
+        balC: s === 'neg' ? 'color: #B3261E' : '', bg: s === 'neg' ? 'background: #FDEBE9' : caused.includes(k) ? 'background: #FFF1E3' : '',
+        badge: s === 'neg' ? 'Découvert' : s === 'low' ? (caused.includes(k) ? 'Rouge à cause des vacances' : 'Dans le rouge') : 'Positif', badgeSt: s === 'neg' ? 'background: #B3261E; color: #fff' : s === 'low' ? 'background: #FFD0A8; color: #6E2E05' : 'background: #E7F6EC; color: #1E6B3A' }; });
+    const gs = groups(offs, withPiste);
+    const groupsL = gs.map((g) => ({ title: g.from === g.to ? dl(P(g.from)) + ' ' + P(g.from).getFullYear() : dl(P(g.from)) + ' → ' + dl(P(g.to)) + ' ' + P(g.to).getFullYear(),
+      sub: g.days.length + ' jour' + (g.days.length > 1 ? 's' : '') + ' · ' + (g.who === 'all' ? 'tous clients' : WHO[g.who]), lost: g.lost ? '−' + fmt(g.lost) : '0 €',
+      imp: Object.keys(g.imp).length ? 'Se voit en ' + Object.keys(g.imp).map((k) => cut(+k) + ' (−' + fmt(g.imp[k]) + ')').join(', ') : 'Hors période simulée',
+      aria: 'Supprimer les vacances du ' + dl(P(g.from)), del: () => { const n = { ...offs }; g.days.forEach((d) => delete n[d]); this.setState({ offs: n, flash: null }); } }));
+    const lostT = gs.reduce((a, g) => a + g.lost, 0);
+    const minV = Math.min(...bal1), minK = bal1.indexOf(minV), sMin = minV < 0 ? 'neg' : 'ok';
+    const [cy, cm] = win[mi], first = (new Date(cy, cm, 1).getDay() + 6) % 7, nd = new Date(cy, cm + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < 35 || i < first + nd; i++) { const d = i - first + 1;
+      if (d < 1 || d > nd) { cells.push({ n: '', tag: '', st: 'visibility: hidden', aria: '', pressed: 'false', tap: () => {} }); continue; }
+      const dt = new Date(cy, cm, d), iso = Y(dt), c = whoOn(dt, true), off = offs[iso];
+      let st, tag = '', can = false, aria = d + ' ' + ML[cm];
+      if (dow(dt) >= 5) { st = 'background: #F3EDE3; color: #9A93AC; border: 2px solid #F3EDE3; cursor: default'; aria += ', week-end'; }
+      else if (HOL.includes(iso)) { st = 'background: #EDE6DA; color: #3B3550; border: 2px solid #EDE6DA; cursor: default'; tag = HOLN[iso]; aria += ', férié'; }
+      else if (off && (off === 'all' || (c && off === c.code))) { st = 'background: #FFD84D; color: #1F1A2E; border: 2px solid #FFD84D'; tag = 'Vacances'; can = true; aria += ', vacances'; }
+      else if (c) { st = c.code === 'A' ? 'background: #ECEBFF; color: #23237A; border: 2px solid #4B4BE0' : c.code === 'B' ? 'background: #FFEBDD; color: #7A3608; border: 2px solid #FF8A3D' : 'background: #F1EAFE; color: #4A2E99; border: 2px dashed #9B6BFF'; tag = c.name; can = true; aria += ', ' + c.name; }
+      else { st = 'background: #fff; color: #9A93AC; border: 2px dashed #E8DDCB'; tag = 'Libre'; aria += ', aucun client'; }
+      const isOff = tag === 'Vacances';
+      cells.push({ n: String(d), tag, st, aria, pressed: String(isOff), tap: can ? () => { const n = { ...offs }; if (isOff) delete n[iso]; else n[iso] = mode; this.setState({ offs: n, flash: null }); } : () => {} }); }
+    const modes = Object.keys(WHO).map((k) => ({ label: WHO[k], pressed: String(k === mode), st: k === mode ? 'background: #1F1A2E; color: #fff; border-color: #1F1A2E' : 'background: #fff; color: #1F1A2E; border-color: #E8DDCB', pick: () => this.setState({ mode: k }) }));
+    const addRange = () => { if (!S.from && !S.to) return; const a = P(S.from || '2027-02-15'), b = P(S.to || S.from || '2027-02-19'); const n = { ...offs }; let cnt = 0;
+      for (let d = a; d <= b; d = new Date(d.getTime() + 864e5)) { if (dow(d) < 5 && !HOL.includes(Y(d))) { n[Y(d)] = mode; cnt++; } }
+      const nm = cashModel(n, withPiste); let x = s0, bad = []; win.forEach((_, k) => { x += nm.withV[k] - out[k].o; if (x < 0) bad.push(mname(k)); });
+      const cost = win.reduce((p, _, k) => p + (withV[k] - nm.withV[k]), 0);
+      this.setState({ offs: n, mi: Math.max(0, win.findIndex(([yy, mm]) => yy === a.getFullYear() && mm === a.getMonth())), flash: bad.length ? { st: 'background: #FBD2CE; color: #7A1A13', t: cnt + ' jours ajoutés : −' + fmt(cost) + ' encaissés. Découvert prévu en ' + bad.join(', ') + '.' } : { st: 'background: #E7F6EC; color: #1E6B3A', t: cnt + ' jours ajoutés : −' + fmt(cost) + ' encaissés, sans découvert.' } }); };
+    const nDays = Object.keys(offs).length;
+    return {
+      nDays, nGroups: gs.length + ' période' + (gs.length > 1 ? 's' : ''), lost: '−' + fmt(lostT),
+      low: { v: fmt(minV), m: 'en ' + mname(minK), c: sMin === 'neg' ? '#B3261E' : '#1F1A2E', bg: sMin === 'neg' ? '#FBD2CE' : sMin === 'low' ? '#FFF4C2' : '#E7F6EC' },
+      risk: { n: String(neg.length + low.length), sub: neg.length ? neg.length + ' à découvert' : caused.length ? caused.length + ' à cause des vacances' : low.length ? 'à cause des délais' : 'aucun', c: neg.length ? '#B3261E' : '#1F1A2E', bg: neg.length ? '#FBD2CE' : low.length ? '#FFF4C2' : '#E7F6EC' },
+      monthLbl: mname(mi), prev: () => this.setState({ mi: Math.max(0, mi - 1) }), next: () => this.setState({ mi: Math.min(14, mi + 1) }), modes, cells,
+      from: S.from || '', to: S.to || '', onFrom: (e) => this.setState({ from: e.target.value }), onTo: (e) => this.setState({ to: e.target.value }), addRange,
+      hasFlash: !!S.flash, flash: S.flash || { st: '', t: '' }, groupsL,
+      withPiste, togglePiste: () => this.setState({ piste: !withPiste }),
+      s0, s0L: fmt(s0), onS0: (e) => this.setState({ s0: Number(e.target.value) }), div: D, divL: fmt(D), onDiv: (e) => this.setState({ div: Number(e.target.value) }),
+      alert, rbars, rows
+    };
+  }
+}
+</script>
+</body>
+</html>

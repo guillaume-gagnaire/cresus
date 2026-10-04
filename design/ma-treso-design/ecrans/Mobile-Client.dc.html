@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fiche mission – mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF7EC}
+*{box-sizing:border-box}
+a{color:#4B4BE0;font-weight:600}a:hover{color:#3434B8}
+h1,h2,h3{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif}
+.num{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif;font-variant-numeric:tabular-nums;font-weight:700}
+.nav a{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px;border-radius:999px;color:#E9E5F5;text-decoration:none;font-size:16px;font-weight:600}
+.nav a:hover{background:#342C4A;color:#fff}
+.nav a.on{background:#FFD84D;color:#1F1A2E}
+.card{background:#fff;border:1.5px solid #F0E6D6;border-radius:26px;box-shadow:0 4px 0 rgba(31,26,46,.05)}
+.lbl{font-size:15px;color:#6B6478;font-weight:600}
+.btn{min-height:50px;padding:0 22px;border-radius:999px;border:2px solid #1F1A2E;background:#fff;font:700 16px Figtree,system-ui,sans-serif;color:#1F1A2E;cursor:pointer}
+.btn.pri{background:#1F1A2E;color:#fff}
+.tip{display:flex;gap:16px;align-items:flex-start;padding:20px 22px;border-radius:22px;background:#FFF4C2;color:#4A3B00;font-size:16px;line-height:1.55}
+.ico{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex:none}
+.step{display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:18px;background:#fff;border:1.5px solid #F0E6D6;min-width:150px;flex:1 1 150px}
+.step b{font-family:'Bricolage Grotesque',Figtree,sans-serif;font-size:18px}
+.step span{font-size:14px;color:#6B6478}
+.arr{align-self:center;color:#B9B2CC;font-size:24px;font-weight:700}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font-size:14px;font-weight:600;color:#6B6478;padding:14px 18px;border-bottom:1.5px solid #F0E6D6;white-space:nowrap}
+td{padding:16px 18px;border-bottom:1px solid #F5EEE3;font-size:16px;white-space:nowrap}
+.field{display:flex;flex-direction:column;gap:8px;font-size:15px;font-weight:600;color:#3B3550}
+.field input,.field select{min-height:50px;padding:0 16px;border-radius:16px;border:2px solid #E8DDCB;font:500 16px Figtree,system-ui,sans-serif;color:#1F1A2E;background:#FFFCF7}
+input[type=range]{width:100%;accent-color:#4B4BE0;min-height:44px}
+
+.m-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:56px;color:#B9B2CC;text-decoration:none;font-size:12px;font-weight:700}
+.m-tab span.i{width:52px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center}
+.m-tab.on{color:#fff}.m-tab.on span.i{background:#FFD84D;color:#1F1A2E}
+.seg{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff;border:1.5px solid #F0E6D6}
+.seg button{flex:1;min-height:44px;border-radius:999px;border:0;background:transparent;font:700 15px Figtree,system-ui,sans-serif;color:#1F1A2E;cursor:pointer}
+.seg button[aria-pressed=true]{background:#1F1A2E;color:#fff}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #F5EEE3}
+.row:last-child{border-bottom:0}
+.sm{font-size:13px;color:#6B6478}
+.mtip{display:flex;gap:12px;padding:16px;border-radius:20px;background:#FFF4C2;color:#4A3B00;font-size:15px;line-height:1.5}
+.chip{min-height:44px;min-width:44px;padding:0 14px;border-radius:999px;border:2px solid #E8DDCB;background:#fff;font:700 15px Figtree,system-ui,sans-serif;color:#1F1A2E;cursor:pointer;flex:none}
+</style>
+</helmet>
+<div style="height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #FFF7EC; color: #1F1A2E; font-family: Figtree, 'Helvetica Neue', system-ui, sans-serif; font-size: 16px">
+<div aria-hidden="true" style="flex: none; height: 44px; padding: 0 26px; display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 15px"><span>9:41</span><span style="display: flex; gap: 6px; align-items: center"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5" width="3" height="7" rx="1"></rect><rect x="10" y="2" width="3" height="10" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="26" height="12" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="21" height="10" rx="3"></rect><rect x="3" y="3" width="15" height="6" rx="1.5" fill="currentColor" stroke="none"></rect><path d="M24.5 4.5v3"></path></svg></span></div><div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 2px 12px 6px"><a href="Mobile-Missions.dc.html" aria-label="Retour aux missions" style="width: 44px; height: 44px; border-radius: 999px; background: #fff; border: 1.5px solid #F0E6D6; color: #1F1A2E; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg></a><span style="font-weight: 700">Missions</span></div><main style="flex: 1; min-height: 0; overflow-y: auto; padding: 6px 20px 28px; display: flex; flex-direction: column; gap: 18px">
+<h1 style="margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -0.02em">Ta mission</h1>
+<div class="seg" role="group" aria-label="Client"><sc-for list="{{pick}}" as="o" hint-placeholder-count="3"><button aria-pressed="{{o.pressed}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
+<section style="padding: 18px; border-radius: 24px; display: flex; justify-content: space-between; align-items: center; {{c.head}}">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 800">{{c.name}}</span><span style="font-size: 14px; opacity: .85">{{c.badge}}</span></div>
+<span class="num" style="font-size: 20px">{{c.month}}<span style="font-size: 13px; font-weight: 600"> /mois</span></span>
+</section>
+<section class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 800">Tarif</h2>
+<div class="seg" role="group" aria-label="Mode de facturation"><sc-for list="{{modesB}}" as="o" hint-placeholder-count="3"><button aria-pressed="{{o.pressed}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
+<span class="sm">{{c.modeHelp}}</span>
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px; border-radius: 16px; background: #F6F5FF"><span style="font-weight: 700; color: #23237A">{{c.rateTitle}}</span><span class="num" style="font-size: 22px">{{c.rateNow}}</span></div>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{hist}}" as="h" hint-placeholder-count="2"><div class="row"><div style="display: flex; flex-direction: column; gap: 1px"><span class="num" style="font-size: 16px; {{h.vSt}}">{{h.v}}</span><span class="sm">{{h.when}}</span></div><div style="display: flex; align-items: center; gap: 4px"><span style="padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; {{h.badgeSt}}">{{h.badge}}</span><button onClick="{{h.del}}" aria-label="{{h.aria}}" style="width: 44px; height: 44px; border: 0; background: transparent; color: #9A93AC; font-size: 22px; cursor: pointer; {{h.delSt}}">×</button></div></div></sc-for>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+<label class="field" style="font-size: 13px">{{c.newLbl}}<input type="number" inputmode="numeric" value="{{newV}}" onChange="{{onNewV}}"></label>
+<label class="field" style="font-size: 13px">À partir du<input type="date" value="{{newFrom}}" onChange="{{onNewFrom}}"></label>
+</div>
+<button class="btn" onClick="{{addRate}}" style="min-height: 48px">Ajouter ce tarif</button>
+<span class="sm">Les anciens tarifs restent appliqués à leurs périodes.</span>
+</section>
+<section class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 800">Dates</h2>
+<label class="field">Début<input type="date" value="{{c.start}}" onChange="{{onStart}}"></label>
+<sc-if value="{{c.hasEnd}}" hint-placeholder-val="{{true}}"><label class="field">Fin<input type="date" value="{{c.end}}" onChange="{{onEnd}}"></label></sc-if>
+<div class="row" style="padding: 4px 0"><span style="font-weight: 600">Sans date de fin</span>
+<button role="switch" aria-checked="{{c.noEndS}}" aria-label="Mission sans date de fin" onClick="{{toggleNoEnd}}" style="flex: none; width: 56px; height: 34px; border-radius: 999px; border: 0; padding: 3px; cursor: pointer; display: flex; {{c.track}}"><span style="width: 28px; height: 28px; border-radius: 999px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2)"></span></button></div>
+<span class="sm">{{c.period}}</span>
+</section>
+<section class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 800">Paiement</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{delays}}" as="o" hint-placeholder-count="5"><button class="chip" aria-pressed="{{o.pressed}}" onClick="{{o.pick}}" style="{{o.st}}">{{o.label}}</button></sc-for></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><label for="r" style="display: flex; justify-content: space-between; font-weight: 600"><span>Retard moyen</span><span class="num">{{c.retardL}}</span></label><input id="r" type="range" min="0" max="30" value="{{c.retard}}" onChange="{{onRetard}}"></div>
+<div style="padding: 14px; border-radius: 18px; background: #FFF7EC; display: flex; flex-direction: column; gap: 8px; font-size: 15px">
+<div style="display: flex; justify-content: space-between"><span style="color: #4E4762">Tu factures</span><b>{{path.inv}}</b></div>
+<div style="display: flex; justify-content: space-between"><span style="color: #4E4762">Échéance</span><b>{{path.due}}</b></div>
+<div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1.5px dashed #E8DDCB"><span style="color: #4E4762">Argent sur le compte</span><b style="color: #3434B8">{{path.cash}}</b></div>
+</div>
+</section>
+<section class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 18px; font-weight: 800">Encaissements</h2><span class="num" style="font-size: 15px">{{c.cashTot}}</span></div>
+<div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; align-items: end">
+<sc-for list="{{bars}}" as="b" hint-placeholder-count="12"><div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><div style="height: 90px; width: 100%; display: flex; flex-direction: column; justify-content: flex-end; border-radius: 8px; background: #FBF5EC"><div style="height: {{b.h}}px; border-radius: 8px; {{b.st}}"></div></div><span style="font-size: 10px; color: #6B6478; font-weight: 700">{{b.m}}</span></div></sc-for>
+</div>
+<span class="sm">Octobre 2026 → septembre 2027, une fois le délai de paiement passé.</span>
+</section>
+<div class="mtip"><div class="ico" style="width: 36px; height: 36px; border-radius: 12px; background: #FFD84D; color: #1F1A2E"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"></path><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"></path></svg></div><div style="display: flex; flex-direction: column; gap: 2px"><b style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px">Une mission finie paie encore</b><span>Le dernier mois travaillé arrive sur ton compte un à deux mois après la fin. À l’inverse, une nouvelle mission met du temps à remplir ta tréso.</span></div></div>
+</main>
+<nav aria-label="Navigation principale" style="flex: none; display: flex; padding: 8px 8px calc(10px + env(safe-area-inset-bottom, 0px)); background: #1F1A2E; border-radius: 26px 26px 0 0"><a class="m-tab" href="Mobile-Accueil.dc.html"><span class="i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5"></path><path d="M4 19h16"></path><path d="m8 15 4-4 3 3 5-6"></path></svg></span>Accueil</a><a class="m-tab on" aria-current="page" href="Mobile-Missions.dc.html"><span class="i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7"></path><path d="M18 14.8c1.9.7 3.1 2.6 3.5 5.2"></path></svg></span>Missions</a><a class="m-tab" href="Mobile-Conges.dc.html"><span class="i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></span>Congés</a><a class="m-tab" href="Mobile-Charges.dc.html"><span class="i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg></span>Charges</a></nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2000}}'>
+class Component extends DCLogic {
+  state = { cl: null, sel: 0 };
+  renderVals() {
+    const HOL = ['2026-11-11', '2026-12-25', '2027-01-01', '2027-03-29', '2027-05-06', '2027-05-17', '2027-07-14'];
+    const DEL = { rec: ['À réception', 0], '30': ['30 jours', 30], '45': ['45 jours', 45], '30fdm': ['30 j fin de mois', 30], '60': ['60 jours', 60] };
+    const MS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const P = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const Y = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const dl = (d) => (d.getDate() === 1 ? '1er' : d.getDate()) + ' ' + MS[d.getMonth()] + ' ' + d.getFullYear();
+    const fmt = (n) => (Math.round(n / 10) * 10).toLocaleString('fr-FR') + ' €';
+    const W0 = new Date(2026, 9, 1), W1 = new Date(2027, 8, 30), SPAN = (W1 - W0) / 864e5 + 1;
+    const win = []; for (let i = 0; i < 12; i++) win.push([2026 + Math.floor((9 + i) / 12), (9 + i) % 12]);
+    const rateAt = (c, dt) => { let v = 0; [...c.rates].sort((a, b) => a.from < b.from ? -1 : 1).forEach((r) => { if (P(r.from) <= dt) v = r.v; }); return v; };
+    const amtIn = (c, y, m) => { let a = 0; const s = P(c.start), e = c.noEnd || !c.end ? null : P(c.end); const last = new Date(y, m + 1, 0).getDate();
+      for (let d = 1; d <= last; d++) { const dt = new Date(y, m, d); if (dt < s || (e && dt > e)) continue;
+        if (c.mode === 'forfait') { a += rateAt(c, dt) / last; continue; }
+        if (!c.days.includes((dt.getDay() + 6) % 7) || HOL.includes(Y(dt))) continue; a += rateAt(c, dt); } return Math.round(a); };
+    const daysIn = (c, y, m) => { let n = 0; const s = P(c.start), e = c.noEnd || !c.end ? null : P(c.end); const last = new Date(y, m + 1, 0).getDate();
+      for (let d = 1; d <= last; d++) { const dt = new Date(y, m, d); if (dt < s || (e && dt > e)) continue; if (!c.days.includes((dt.getDay() + 6) % 7)) continue; if (HOL.includes(Y(dt))) continue; n++; } return n; };
+    const payDate = (c, y, m) => { const inv = new Date(y, m + 1, 0); const n = DEL[c.delai][1]; let due;
+      if (c.delai === '30fdm') { const t = new Date(inv.getTime() + 30 * 864e5); due = new Date(t.getFullYear(), t.getMonth() + 1, 0); } else due = new Date(inv.getTime() + n * 864e5);
+      return { inv, due, cash: new Date(due.getTime() + Number(c.retard || 0) * 864e5) }; };
+    const model = (cl, withPiste) => {
+      const work = win.map(() => ({})), cash = win.map(() => ({}));
+      cl.forEach((c, ci) => { if (c.piste && !withPiste) return;
+        for (let k = -8; k < 12; k++) { const y = 2026 + Math.floor((9 + k) / 12), m = ((9 + k) % 12 + 12) % 12; const amt = amtIn(c, y, m); if (!amt) continue;
+          if (k >= 0) work[k][ci] = (work[k][ci] || 0) + amt;
+          const pd = payDate(c, y, m).cash; const j = win.findIndex(([yy, mm]) => yy === pd.getFullYear() && mm === pd.getMonth()); if (j >= 0) cash[j][ci] = (cash[j][ci] || 0) + amt; } });
+      return { work, cash };
+    };
+
+    const S = this.state || {};
+    const cl = S.cl || [
+      { name: 'Client A', head: 'background: #4B4BE0; color: #fff', color: '#4B4BE0', mode: 'tjm', days: [0, 4], rates: [{ from: '2026-10-01', v: 650 }, { from: '2027-01-01', v: 700 }], start: '2026-10-01', end: '2027-05-31', noEnd: false, delai: '30fdm', retard: 0, piste: false },
+      { name: 'Client B', head: 'background: #FF8A3D; color: #1F1A2E', color: '#FF8A3D', mode: 'tjm', days: [1, 2, 3], rates: [{ from: '2026-03-02', v: 550 }, { from: '2026-09-01', v: 600 }], start: '2026-03-02', end: '', noEnd: true, delai: '45', retard: 10, piste: false },
+      { name: 'Client C', head: 'background: #9B6BFF; color: #fff', color: '#9B6BFF', mode: 'tjm', days: [0, 4], rates: [{ from: '2027-07-01', v: 700 }], start: '2027-07-01', end: '2027-12-31', noEnd: false, delai: '30', retard: 5, piste: true },
+      { name: 'Client D', head: 'background: #2E9E6A; color: #fff', color: '#2E9E6A', mode: 'forfait', days: [], rates: [{ from: '2026-11-01', v: 1200 }, { from: '2027-04-01', v: 1350 }], start: '2026-11-01', end: '', noEnd: true, delai: '30', retard: 0, piste: false }
+    ];
+    const sel = S.sel ?? 0, c = cl[sel];
+    const up = (patch) => this.setState({ cl: cl.map((x, i) => i === sel ? { ...x, ...patch } : x) });
+    const { cash } = model([c], true);
+    const vals = cash.map((x) => x[0] || 0), mx = Math.max(1, ...vals);
+    let pm = 0; for (let k = 0; k < 12; k++) { if (amtIn(c, win[k][0], win[k][1])) { pm = k; break; } }
+    const TODAY = new Date(2026, 9, 4), sortR = [...c.rates].sort((a, b) => a.from < b.from ? -1 : 1);
+    let nowR = sortR[0]; sortR.forEach((x) => { if (P(x.from) <= TODAY) nowR = x; });
+    const unit = c.mode === 'forfait' ? ' €/mois' : ' €/j';
+    const pd = payDate(c, win[pm][0], win[pm][1]);
+    return {
+      pick: ['Client A', 'Client B', 'Client C', 'Client D'].map((l, i) => ({ label: l.replace('Client ', ''), pressed: String(i === sel), pick: () => this.setState({ sel: i }) })),
+      c: { name: c.name, head: c.head, badge: c.piste ? 'Piste' : c.mode === 'forfait' ? 'Forfait mensuel' : 'Mission en cours', month: fmt(c.mode === 'forfait' ? nowR.v : c.days.length * 4.3 * nowR.v),
+        modeHelp: c.mode === 'forfait' ? 'Même montant chaque mois, congés ou pas. Premier et dernier mois au prorata.' : 'Jours travaillés × TJM, fériés et congés retirés.',
+        rateTitle: c.mode === 'forfait' ? 'Forfait actuel' : 'TJM actuel', rateNow: nowR.v.toLocaleString('fr-FR') + unit, newLbl: c.mode === 'forfait' ? 'Nouveau forfait (€)' : 'Nouveau TJM (€)', start: c.start, end: c.end, hasEnd: !c.noEnd,
+        noEndS: String(!!c.noEnd), track: c.noEnd ? 'background: #4B4BE0; justify-content: flex-end' : 'background: #D9D2C5; justify-content: flex-start',
+        period: 'Du ' + dl(P(c.start)) + (c.noEnd || !c.end ? ', sans fin' : ' au ' + dl(P(c.end))), retard: c.retard, retardL: c.retard ? c.retard + ' j' : 'aucun', cashTot: fmt(vals.reduce((a, b) => a + b, 0)) },
+      delays: Object.keys(DEL).map((k) => ({ label: DEL[k][0], pressed: String(k === c.delai), st: k === c.delai ? 'background: #1F1A2E; color: #fff; border-color: #1F1A2E' : '', pick: () => up({ delai: k }) })),
+      path: { inv: dl(pd.inv), due: dl(pd.due), cash: dl(pd.cash) },
+      modesB: [['tjm', 'Au temps passé'], ['forfait', 'Forfait mensuel']].map(([k, l]) => ({ label: l, pressed: String(k === c.mode), pick: () => up({ mode: k, days: k === 'tjm' && !c.days.length ? [0] : c.days }) })),
+      hist: sortR.map((r, ri) => { const cur = r === nowR, fut = P(r.from) > TODAY, nx = sortR[ri + 1];
+        return { v: r.v.toLocaleString('fr-FR') + unit, when: 'Du ' + dl(P(r.from)) + (nx ? ' au ' + dl(new Date(P(nx.from).getTime() - 864e5)) : ''), vSt: !cur && !fut ? 'color: #9A93AC; text-decoration: line-through' : '',
+          badge: cur ? 'Actuel' : fut ? 'À venir' : 'Ancien', badgeSt: cur ? 'background: #4B4BE0; color: #fff' : fut ? 'background: #FFD84D' : 'background: #F5EEE3; color: #6B6478',
+          aria: 'Supprimer le tarif du ' + dl(P(r.from)), delSt: sortR.length < 2 ? 'visibility: hidden' : '', del: () => { if (sortR.length > 1) up({ rates: c.rates.filter((x) => x !== r) }); } }; }),
+      newV: S.newV ?? '', newFrom: S.newFrom ?? '', onNewV: (e) => this.setState({ newV: e.target.value }), onNewFrom: (e) => this.setState({ newFrom: e.target.value }),
+      addRate: () => { const v = Number(S.newV), f = S.newFrom; if (!v || !f) return; up({ rates: c.rates.filter((x) => x.from !== f).concat({ from: f, v }) }); this.setState({ newV: '', newFrom: '' }); },
+      bars: vals.map((v, k) => ({ m: MS[win[k][1]].charAt(0).toUpperCase(), h: Math.round(v / mx * 86), st: 'background: ' + c.color })),
+      onStart: (e) => e.target.value && up({ start: e.target.value }), onEnd: (e) => up({ end: e.target.value }),
+      toggleNoEnd: () => up({ noEnd: !c.noEnd, end: c.end || '2027-06-30' }), onRetard: (e) => up({ retard: Number(e.target.value) })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Connexion – mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF7EC}
+*{box-sizing:border-box}
+a{color:#4B4BE0;font-weight:600}a:hover{color:#3434B8}
+h1,h2,h3{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif}
+.num{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif;font-variant-numeric:tabular-nums;font-weight:700}
+.nav a{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px;border-radius:999px;color:#E9E5F5;text-decoration:none;font-size:16px;font-weight:600}
+.nav a:hover{background:#342C4A;color:#fff}
+.nav a.on{background:#FFD84D;color:#1F1A2E}
+.card{background:#fff;border:1.5px solid #F0E6D6;border-radius:26px;box-shadow:0 4px 0 rgba(31,26,46,.05)}
+.lbl{font-size:15px;color:#6B6478;font-weight:600}
+.btn{min-height:50px;padding:0 22px;border-radius:999px;border:2px solid #1F1A2E;background:#fff;font:700 16px Figtree,system-ui,sans-serif;color:#1F1A2E;cursor:pointer}
+.btn.pri{background:#1F1A2E;color:#fff}
+.tip{display:flex;gap:16px;align-items:flex-start;padding:20px 22px;border-radius:22px;background:#FFF4C2;color:#4A3B00;font-size:16px;line-height:1.55}
+.ico{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex:none}
+.step{display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:18px;background:#fff;border:1.5px solid #F0E6D6;min-width:150px;flex:1 1 150px}
+.step b{font-family:'Bricolage Grotesque',Figtree,sans-serif;font-size:18px}
+.step span{font-size:14px;color:#6B6478}
+.arr{align-self:center;color:#B9B2CC;font-size:24px;font-weight:700}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font-size:14px;font-weight:600;color:#6B6478;padding:14px 18px;border-bottom:1.5px solid #F0E6D6;white-space:nowrap}
+td{padding:16px 18px;border-bottom:1px solid #F5EEE3;font-size:16px;white-space:nowrap}
+.field{display:flex;flex-direction:column;gap:8px;font-size:15px;font-weight:600;color:#3B3550}
+.field input,.field select{min-height:50px;padding:0 16px;border-radius:16px;border:2px solid #E8DDCB;font:500 16px Figtree,system-ui,sans-serif;color:#1F1A2E;background:#FFFCF7}
+input[type=range]{width:100%;accent-color:#4B4BE0;min-height:44px}
+
+.m-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:56px;color:#B9B2CC;text-decoration:none;font-size:12px;font-weight:700}
+.m-tab span.i{width:52px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center}
+.m-tab.on{color:#fff}.m-tab.on span.i{background:#FFD84D;color:#1F1A2E}
+.seg{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff;border:1.5px solid #F0E6D6}
+.seg button{flex:1;min-height:44px;border-radius:999px;border:0;background:transparent;font:700 15px Figtree,system-ui,sans-serif;color:#1F1A2E;cursor:pointer}
+.seg button[aria-pressed=true]{background:#1F1A2E;color:#fff}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #F5EEE3}
+.row:last-child{border-bottom:0}
+.sm{font-size:13px;color:#6B6478}
+.mtip{display:flex;gap:12px;padding:16px;border-radius:20px;background:#FFF4C2;color:#4A3B00;font-size:15px;line-height:1.5}
+.chip{min-height:44px;min-width:44px;padding:0 14px;border-radius:999px;border:2px solid #E8DDCB;background:#fff;font:700 15px Figtree,system-ui,sans-serif;color:#1F1A2E;cursor:pointer;flex:none}
+</style>
+</helmet>
+<div style="height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #FFF7EC; color: #1F1A2E; font-family: Figtree, 'Helvetica Neue', system-ui, sans-serif; font-size: 16px">
+<div aria-hidden="true" style="flex: none; height: 44px; padding: 0 26px; display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 15px"><span>9:41</span><span style="display: flex; gap: 6px; align-items: center"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5" width="3" height="7" rx="1"></rect><rect x="10" y="2" width="3" height="10" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="26" height="12" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="21" height="10" rx="3"></rect><rect x="3" y="3" width="15" height="6" rx="1.5" fill="currentColor" stroke="none"></rect><path d="M24.5 4.5v3"></path></svg></span></div><main style="flex: 1; min-height: 0; overflow-y: auto; padding: 6px 20px 28px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px 0 6px; text-align: center">
+<div style="width: 76px; height: 76px; border-radius: 24px; background: #FFD84D; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; transform: rotate(-6deg); box-shadow: 0 6px 0 #1F1A2E">GD</div>
+<h1 style="margin: 6px 0 0; font-size: 34px; font-weight: 800; letter-spacing: -0.02em">{{title}}</h1>
+<span style="font-size: 16px; color: #6B6478; max-width: 300px">{{sub}}</span>
+</div><div class="seg" role="group" aria-label="Connexion ou inscription"><sc-for list="{{modes}}" as="o" hint-placeholder-count="3"><button aria-pressed="{{o.pressed}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
+<section style="display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{signup}}" hint-placeholder-val="{{false}}">
+<label class="field">Prénom<input type="text" autocomplete="given-name" placeholder="Guillaume"></label>
+</sc-if>
+<label class="field">E-mail<input type="email" autocomplete="email" inputmode="email" placeholder="toi@exemple.fr"></label>
+<div class="field"><label for="pw">Mot de passe</label>
+<div style="position: relative"><input id="pw" type="{{pwType}}" autocomplete="current-password" placeholder="••••••••" style="width: 100%; padding-right: 56px">
+<button onClick="{{togglePw}}" aria-label="{{pwAria}}" style="position: absolute; right: 4px; top: 3px; width: 44px; height: 44px; border: 0; background: transparent; color: #6B6478; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div>
+<sc-if value="{{signup}}" hint-placeholder-val="{{false}}"><span class="sm" style="font-weight: 500">12 caractères minimum, avec un chiffre.</span></sc-if>
+</div>
+<sc-if value="{{login}}" hint-placeholder-val="{{true}}"><a href="#" style="align-self: flex-end; font-size: 15px">Mot de passe oublié&#160;?</a></sc-if>
+<a href="Mobile-Accueil.dc.html" class="btn pri" style="min-height: 56px; display: flex; align-items: center; justify-content: center; text-decoration: none">{{cta}}</a>
+</section>
+<div style="display: flex; align-items: center; gap: 12px; color: #9A93AC; font-size: 14px"><span style="flex: 1; height: 1.5px; background: #F0E6D6"></span>ou<span style="flex: 1; height: 1.5px; background: #F0E6D6"></span></div>
+<a href="Mobile-Accueil.dc.html" class="btn" style="min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"></path><path d="M9 9v1M15 9v1M12 9v4h-1M9.5 16c1.5 1 3.5 1 5 0"></path></svg>Face ID</a>
+<a href="Mobile-Accueil.dc.html" class="btn" style="min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; border-color: #E8DDCB"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="m4 7 8 6 8-6"></path></svg>Recevoir un lien par e-mail</a>
+<p style="margin: 0; text-align: center" class="sm">Tes données financières restent chiffrées. On ne les partage avec personne.</p>
+</main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  state = { mode: 'in', show: false };
+  renderVals() {
+    const segOpts = (opts, cur, key, self) => opts.map(([id, label]) => ({ label, pressed: String(id === cur), pick: () => self.setState({ [key]: id }) }));
+    const st = this.state || {}, mode = st.mode || 'in', show = !!st.show, up = mode === 'up';
+    return {
+      modes: segOpts([['in', 'Se connecter'], ['up', 'Créer un compte']], mode, 'mode', this),
+      signup: up, login: !up,
+      title: up ? 'Bienvenue !' : 'Content de te revoir',
+      sub: up ? 'Crée ton compte pour piloter la tréso de ta société.' : 'Connecte-toi pour voir où en est ta tréso.',
+      cta: up ? 'Créer mon compte' : 'Se connecter',
+      pwType: show ? 'text' : 'password', pwAria: show ? 'Masquer le mot de passe' : 'Afficher le mot de passe',
+      togglePw: () => this.setState({ show: !show })
+    };
+  }
+}
+</script>
+</body>
+</html>

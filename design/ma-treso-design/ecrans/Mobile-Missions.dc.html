@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Missions – mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFF7EC}
+*{box-sizing:border-box}
+a{color:#4B4BE0;font-weight:600}a:hover{color:#3434B8}
+h1,h2,h3{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif}
+.num{font-family:'Bricolage Grotesque',Figtree,system-ui,sans-serif;font-variant-numeric:tabular-nums;font-weight:700}
+.nav a{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px;border-radius:999px;color:#E9E5F5;text-decoration:none;font-size:16px;font-weight:600}
+.nav a:hover{background:#342C4A;color:#fff}
+.nav a.on{background:#FFD84D;color:#1F1A2E}
+.card{background:#fff;border:1.5px solid #F0E6D6;border-radius:26px;box-shadow:0 4px 0 rgba(31,26,46,.05)}
+.lbl{font-size:15px;color:#6B6478;font-weight:600}
+.btn{min-height:50px;padding:0 22px;border-radius:999px;border:2px solid #1F1A2E;background:#fff;font:700 16px Figtree,system-ui,sans-serif;color:#1F1A2E;cursor:pointer}
+.btn.pri{background:#1F1A2E;color:#fff}
+.tip{display:flex;gap:16px;align-items:flex-start;padding:20px 22px;border-radius:22px;background:#FFF4C2;color:#4A3B00;font-size:16px;line-height:1.55}
+.ico{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex:none}
+.step{display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:18px;background:#fff;border:1.5px solid #F0E6D6;min-width:150px;flex:1 1 150px}
+.step b{font-family:'Bricolage Grotesque',Figtree,sans-serif;font-size:18px}
+.step span{font-size:14px;color:#6B6478}
+.arr{align-self:center;color:#B9B2CC;font-size:24px;font-weight:700}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font-size:14px;font-weight:600;color:#6B6478;padding:14px 18px;border-bottom:1.5px solid #F0E6D6;white-space:nowrap}
+td{padding:16px 18px;border-bottom:1px solid #F5EEE3;font-size:16px;white-space:nowrap}
+.field{display:flex;flex-direction:column;gap:8px;font-size:15px;font-weight:600;color:#3B3550}
+.field input,.field select{min-height:50px;padding:0 16px;border-radius:16px;border:2px solid #E8DDCB;font:500 16px Figtree,system-ui,sans-serif;color:#1F1A2E;background:#FFFCF7}
+input[type=range]{width:100%;accent-color:#4B4BE0;min-height:44px}
+
+.m-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:56px;color:#B9B2CC;text-decoration:none;font-size:12px;font-weight:700}
+.m-tab span.i{width:52px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center}
+.m-tab.on{color:#fff}.m-tab.on span.i{background:#FFD84D;color:#1F1A2E}
+.seg{display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff;border:1.5px solid #F0E6D6}
+.seg button{flex:1;min-height:44px;border-radius:999px;border:0;background:transparent;font:700 15px Figtree,system-ui,sans-serif;color:#1F1A2E;cursor:pointer}
+.seg button[aria-pressed=true]{background:#1F1A2E;color:#fff}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #F5EEE3}
+.row:last-child{border-bottom:0}
+.sm{font-size:13px;color:#6B6478}
+.mtip{display:flex;gap:12px;padding:16px;border-radius:20px;background:#FFF4C2;color:#4A3B00;font-size:15px;line-height:1.5}
+.chip{min-height:44px;min-width:44px;padding:0 14px;border-radius:999px;border:2px solid #E8DDCB;background:#fff;font:700 15px Figtree,system-ui,sans-serif;color:#1F1A2E;cursor:pointer;flex:none}
+</style>
+</helmet>
+<div style="height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #FFF7EC; color: #1F1A2E; font-family: Figtree, 'Helvetica Neue', system-ui, sans-serif; font-size: 16px">
+<div aria-hidden="true" style="flex: none; height: 44px; padding: 0 26px; display: flex; align-items: center; justify-content: space-between; font-weight: 700; font-size: 15px"><span>9:41</span><span style="display: flex; gap: 6px; align-items: center"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"></rect><rect x="5" y="5" width="3" height="7" rx="1"></rect><rect x="10" y="2" width="3" height="10" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg><svg width="26" height="12" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="21" height="10" rx="3"></rect><rect x="3" y="3" width="15" height="6" rx="1.5" fill="currentColor" stroke="none"></rect><path d="M24.5 4.5v3"></path></svg></span></div><main style="flex: 1; min-height: 0; overflow-y: auto; padding: 6px 20px 28px; display: flex; flex-direction: column; gap: 18px">
+<header style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-top: 6px">
+<div style="display: flex; flex-direction: column; gap: 4px"><span class="lbl" style="font-size: 14px">2 clients actifs</span><h1 style="margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05">Qui te fait vivre&#160;?</h1></div>
+<a href="Mobile-Profil.dc.html" aria-label="Ton profil" style="flex: none; width: 44px; height: 44px; border-radius: 15px; background: #FFD84D; color: #1F1A2E; text-decoration: none; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; transform: rotate(-6deg)">GD</a>
+</header>
+<section class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 20px; font-weight: 800">Ta semaine type</h2><span class="sm">Touche un jour</span></div>
+<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="5">
+<button onClick="{{d.cycle}}" aria-label="{{d.aria}}" style="min-height: 76px; border-radius: 18px; border: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: Figtree, sans-serif; {{d.st}}"><span style="font-size: 13px; font-weight: 600">{{d.d}}</span><span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 800">{{d.who}}</span></button>
+</sc-for>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-radius: 18px; background: #FFF7EC"><span style="font-weight: 600">CA moyen par mois</span><span class="num" style="font-size: 24px">{{total}}</span></div>
+</section>
+<sc-for list="{{clients}}" as="c" hint-placeholder-count="2">
+<a href="Mobile-Client.dc.html" class="card" style="overflow: hidden; display: block; text-decoration: none; color: #1F1A2E; font-weight: 400">
+<div style="padding: 16px 18px; display: flex; justify-content: space-between; align-items: center; {{c.head}}">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 800">{{c.name}}</span><span style="font-size: 14px; opacity: .85">{{c.sub}}</span></div>
+<span class="num" style="font-size: 20px">{{c.tjm}}</span>
+</div>
+<div style="padding: 16px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 2px"><span class="sm">Jours / mois</span><span class="num" style="font-size: 22px">{{c.days}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span class="sm">CA / mois</span><span class="num" style="font-size: 22px">{{c.ca}}</span></div>
+</div>
+<div style="padding: 0 18px 16px; display: flex; flex-direction: column; gap: 8px; font-size: 14px">
+<div style="display: flex; justify-content: space-between; gap: 10px"><span style="color: #6B6478">Période</span><span style="font-weight: 600; text-align: right">{{c.period}}</span></div>
+<div style="display: flex; justify-content: space-between; gap: 10px"><span style="color: #6B6478">Paie à</span><span style="font-weight: 600">{{c.delai}}</span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid #F5EEE3; color: #4B4BE0; font-weight: 700">Modifier la mission<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></div>
+</div>
+</a>
+</sc-for>
+<div class="mtip"><div class="ico" style="width: 36px; height: 36px; border-radius: 12px; background: #FFD84D; color: #1F1A2E"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"></path><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"></path></svg></div><div style="display: flex; flex-direction: column; gap: 2px"><b style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px">Comment on calcule ?</b><span>Jours de la semaine × 4,3 semaines × TJM. Les fériés et tes congés sont retirés dans l’onglet Congés.</span></div></div>
+<button class="btn pri" style="min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Ajouter un client</button>
+</main>
+<nav aria-label="Navigation principale" style="flex: none; display: flex; padding: 8px 8px calc(10px + env(safe-area-inset-bottom, 0px)); background: #1F1A2E; border-radius: 26px 26px 0 0"><a class="m-tab" href="Mobile-Accueil.dc.html"><span class="i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5"></path><path d="M4 19h16"></path><path d="m8 15 4-4 3 3 5-6"></path></svg></span>Accueil</a><a class="m-tab on" aria-current="page" href="Mobile-Missions.dc.html"><span class="i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7"></path><path d="M18 14.8c1.9.7 3.1 2.6 3.5 5.2"></path></svg></span>Missions</a><a class="m-tab" href="Mobile-Conges.dc.html"><span class="i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></span>Congés</a><a class="m-tab" href="Mobile-Charges.dc.html"><span class="i"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg></span>Charges</a></nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1120}}'>
+class Component extends DCLogic {
+  state = { w: ['A', 'B', 'B', 'B', 'A'] };
+  renderVals() {
+    const fmt = (n) => (Math.round(n / 10) * 10).toLocaleString('fr-FR') + ' €';
+    const w = (this.state && this.state.w) || ['A', 'B', 'B', 'B', 'A'];
+    const C = { A: { name: 'Client A', tjm: 650, head: 'background: #4B4BE0; color: #fff', bg: '#4B4BE0', fg: '#fff', sub: 'Lead dev · régie', period: '1er oct. 2026 → 31 mai 2027', delai: '30 j fin de mois' }, B: { name: 'Client B', tjm: 600, head: 'background: #FF8A3D; color: #1F1A2E', bg: '#FF8A3D', fg: '#1F1A2E', sub: 'Mission produit', period: 'Depuis le 2 mars 2026, sans fin', delai: '45 jours · ~10 j de retard' } };
+    const D = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'], N = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
+    const next = { A: 'B', B: '-', '-': 'A' };
+    const days = w.map((x, i) => ({
+      d: D[i], who: x === '-' ? '—' : x,
+      aria: N[i] + ' : ' + (x === '-' ? 'libre' : C[x].name) + '. Toucher pour changer',
+      st: x === '-' ? 'background: #F5EEE3; color: #6B6478' : 'background: ' + C[x].bg + '; color: ' + C[x].fg,
+      cycle: () => { const n = w.slice(); n[i] = next[x]; this.setState({ w: n }); }
+    }));
+    let total = 0;
+    const clients = ['A', 'B'].map((k) => {
+      const nd = w.filter((x) => x === k).length * 4.3, ca = nd * C[k].tjm; total += ca;
+      const jours = nd ? w.map((x, i) => x === k ? D[i] : null).filter(Boolean).join(', ') : 'aucun jour';
+      return { name: C[k].name, head: C[k].head, sub: C[k].sub + ' · ' + jours, tjm: C[k].tjm + ' €/j', days: nd.toFixed(1).replace('.', ','), ca: fmt(ca), period: C[k].period, delai: C[k].delai };
+    });
+    return { days, clients, total: fmt(total) };
+  }
+}
+</script>
+</body>
+</html>
