@@ -1,0 +1,49 @@
+:root {
+  --bg: #FFF7EC;
+  --surface: #FFFFFF;
+  --border: #F0E6D6;
+  --border-soft: #F5EEE3;
+  --field-border: #E8DDCB;
+  --field-bg: #FFFCF7;
+  --ink: #1F1A2E;
+  --ink-2: #4E4762;
+  --ink-3: #3B3550;
+  --muted: #6B6478;
+  --muted-2: #9A93AC;
+  --night-2: #2E2742;
+  --night-hover: #342C4A;
+  --on-night: #E9E5F5;
+  --on-night-muted: #B9B2CC;
+  --sun: #FFD84D;
+  --tip-bg: #FFF4C2;
+  --tip-ink: #4A3B00;
+  --client-indigo: #4B4BE0;
+  --client-orange: #FF8A3D;
+  --client-violet: #9B6BFF;
+  --client-green: #2E9E6A;
+  --client-rose: #D9467A;
+  --client-teal: #1F8FA6;
+  --link: #4B4BE0;
+  --link-hover: #3434B8;
+  --income-ink: #3434B8;
+  --positive-bg: #DDF3E5;
+  --positive-ink: #12452A;
+  --red-bg: #FFE6CF;
+  --red-ink: #6E2E05;
+  --danger-bg: #FBD2CE;
+  --danger-ink: #7A1A13;
+  --bar-up: #2E9E6A;
+  --bar-down: #E5484D;
+  --font-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', Figtree, system-ui, sans-serif;
+  --font-text: 'Figtree Variable', Figtree, 'Helvetica Neue', system-ui, sans-serif;
+  --radius-card: 26px;
+  --radius-verdict: 30px;
+  --radius-pill: 999px;
+  --shadow-card: 0 4px 0 rgba(31, 26, 46, .05);
+  --page-pad: 44px;
+  --gap-block: 28px;
+}
+
+@media (max-width: 1023.98px) {
+  :root { --page-pad: 20px; --gap-block: 16px; }
+}

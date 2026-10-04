@@ -1,0 +1,45 @@
+/* Classes globales reprises de Main.dc.html (desktop) et Mobile-Accueil.dc.html (mobile), hex remplacés par les jetons de tokens.css. */
+body{margin:0;background:var(--bg)}
+*{box-sizing:border-box}
+a{color:var(--link);font-weight:600}a:hover{color:var(--link-hover)}
+h1,h2,h3{font-family:var(--font-display)}
+.num{font-family:var(--font-display);font-variant-numeric:tabular-nums;font-weight:700}
+.nav a{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 16px;border-radius:var(--radius-pill);color:var(--on-night);text-decoration:none;font-size:16px;font-weight:600}
+.nav a:hover{background:var(--night-hover);color:#fff}
+.nav a.on{background:var(--sun);color:var(--ink)}
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
+.lbl{font-size:15px;color:var(--muted);font-weight:600}
+.btn{min-height:50px;padding:0 22px;border-radius:var(--radius-pill);border:2px solid var(--ink);background:var(--surface);font:700 16px var(--font-text);color:var(--ink);cursor:pointer}
+.btn.pri{background:var(--ink);color:#fff}
+.tip{display:flex;gap:16px;align-items:flex-start;padding:20px 22px;border-radius:22px;background:var(--tip-bg);color:var(--tip-ink);font-size:16px;line-height:1.55}
+.ico{width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex:none}
+.step{display:flex;flex-direction:column;gap:4px;padding:14px 18px;border-radius:18px;background:var(--surface);border:1.5px solid var(--border);min-width:150px;flex:1 1 150px}
+.step b{font-family:var(--font-display);font-size:18px}
+.step span{font-size:14px;color:var(--muted)}
+.arr{align-self:center;color:var(--on-night-muted);font-size:24px;font-weight:700}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font-size:14px;font-weight:600;color:var(--muted);padding:14px 18px;border-bottom:1.5px solid var(--border);white-space:nowrap}
+td{padding:16px 18px;border-bottom:1px solid var(--border-soft);font-size:16px;white-space:nowrap}
+.field{display:flex;flex-direction:column;gap:8px;font-size:15px;font-weight:600;color:var(--ink-3)}
+.field input,.field select{min-height:50px;padding:0 16px;border-radius:16px;border:2px solid var(--field-border);font:500 16px var(--font-text);color:var(--ink);background:var(--field-bg)}
+input[type=range]{width:100%;accent-color:var(--link);min-height:44px}
+
+/* Mobile (Mobile-Accueil.dc.html) */
+.m-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:56px;color:var(--on-night-muted);text-decoration:none;font-size:12px;font-weight:700}
+.m-tab span.i{width:52px;height:32px;border-radius:var(--radius-pill);display:flex;align-items:center;justify-content:center}
+.m-tab.on{color:#fff}.m-tab.on span.i{background:var(--sun);color:var(--ink)}
+.seg{display:flex;gap:4px;padding:4px;border-radius:var(--radius-pill);background:var(--surface);border:1.5px solid var(--border)}
+.seg button{flex:1;min-height:44px;border-radius:var(--radius-pill);border:0;background:transparent;font:700 15px var(--font-text);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-soft)}
+.row:last-child{border-bottom:0}
+.sm{font-size:13px;color:var(--muted)}
+.mtip{display:flex;gap:12px;padding:16px;border-radius:20px;background:var(--tip-bg);color:var(--tip-ink);font-size:15px;line-height:1.5}
+.chip{min-height:44px;min-width:44px;padding:0 14px;border-radius:var(--radius-pill);border:2px solid var(--field-border);background:var(--surface);font:700 15px var(--font-text);color:var(--ink);cursor:pointer;flex:none}
+
+/* Ajouts du socle */
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-text); font-size: 16px; }
+:focus-visible { outline: 3px solid var(--client-indigo); outline-offset: 2px; border-radius: 8px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+button { font-family: inherit; }
