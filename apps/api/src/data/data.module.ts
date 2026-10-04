@@ -10,11 +10,13 @@ import { LeavesService } from './leaves.service.js';
 import { ProfileController } from './profile.controller.js';
 import { StateController } from './state.controller.js';
 import { StateService } from './state.service.js';
+import { TransferController } from './transfer.controller.js';
+import { TransferService } from './transfer.service.js';
 
 @Module({
   imports: [AuthModule],
-  controllers: [StateController, ProfileController, BalanceController, ClientsController, LeavesController, ChargesController],
-  providers: [StateService, ClientsService, LeavesService, ChargesService],
-  exports: [StateService, ClientsService, LeavesService, ChargesService],
+  controllers: [StateController, ProfileController, BalanceController, ClientsController, LeavesController, ChargesController, TransferController],
+  providers: [StateService, ClientsService, LeavesService, ChargesService, TransferService],
+  exports: [StateService, ClientsService, LeavesService, ChargesService, TransferService],
 })
 export class DataModule {}

@@ -1,3 +1,4 @@
+import type { ExportFileV1 } from './contracts';
 import { eachDay, type ISODate } from './dates';
 import { isWorkingDay } from './holidays';
 import type { BalanceRef, Charge, Client, EngineInput, Leave, Profile } from './types';
@@ -69,4 +70,23 @@ export function demoData(): DemoData {
 export function demoInput(today: ISODate = DEMO_TODAY): EngineInput {
   const d = demoData();
   return { today, profile: d.profile, clients: d.clients, leaves: d.leaves, charges: d.charges, balance: d.balance };
+}
+
+export function demoExportFile(): ExportFileV1 {
+  const d = demoData();
+  return {
+    format: 'ma-treso',
+    version: 1,
+    exportedAt: `${DEMO_TODAY}T00:00:00.000Z`,
+    profile: { ...d.profile, alertRedMonth: true, alertLatePayment: true },
+    balanceSnapshots: [{ date: d.balance.date, amount: d.balance.amount }],
+    clients: d.clients.map(({ id, rates, archivedAt, ...c }) => ({
+      ...c,
+      ref: id,
+      archived: archivedAt !== null,
+      rates: rates.map((r) => ({ validFrom: r.validFrom, amount: r.amount })),
+    })),
+    leaves: d.leaves.map((l) => ({ date: l.date, scope: l.scope, clientRef: l.clientId })),
+    charges: d.charges.map(({ id: _id, ...c }) => c),
+  };
 }

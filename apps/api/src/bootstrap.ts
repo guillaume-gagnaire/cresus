@@ -14,6 +14,8 @@ export async function createApp(config: AppConfig = loadConfig()): Promise<NestE
     // une erreur au démarrage (migration, base injoignable…) est propagée à l'appelant au lieu de tuer le processus
     abortOnError: false,
   });
+  // une sauvegarde JSON peut dépasser les 100 ko par défaut d'Express
+  app.useBodyParser('json', { limit: '5mb' });
   app.set('trust proxy', 1);
   app.setGlobalPrefix('api');
   app.use(cookieParser(config.sessionSecret));

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { monthResults, monthState, resultsSummary } from '../src/results';
-import { DEMO_TODAY, demoData, demoInput } from '../src/seed';
+import { DEMO_TODAY, demoData, demoExportFile, demoInput } from '../src/seed';
 import { makeInput } from './helpers';
 
 // Valeurs de référence calculées avec la logique de démo des maquettes (Main.dc.html), en centimes
@@ -99,5 +99,14 @@ describe('demo seed', () => {
     // 5 jours à Noël + 1 pont + 15 jours en août
     expect(d.leaves).toHaveLength(21);
     expect(d.leaves.find((l) => l.date === '2026-12-25')).toBeUndefined();
+  });
+
+  it('builds an importable export file from the demo data', () => {
+    const file = demoExportFile();
+    expect(file).toMatchObject({ format: 'ma-treso', version: 1 });
+    expect(file.clients.map((c) => c.ref)).toEqual(['client-a', 'client-b', 'client-c', 'client-d']);
+    expect(file.leaves.find((l) => l.date === '2027-05-07')).toEqual({ date: '2027-05-07', scope: 'CLIENT', clientRef: 'client-a' });
+    expect(file.balanceSnapshots).toEqual([{ date: '2026-10-04', amount: 4_832_000 }]);
+    expect(file.profile).toMatchObject({ firstName: 'Guillaume', legalStatus: 'SASU', alertRedMonth: true });
   });
 });
