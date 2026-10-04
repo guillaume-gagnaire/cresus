@@ -9,7 +9,7 @@ const emit = defineEmits<{ prev: []; next: [] }>();
 </script>
 
 <template>
-  <section class="verdict" :class="`size-${size}`" :style="{ background: verdict.style.bg, color: verdict.style.ink }">
+  <section class="verdict" :class="`is-${size}`" :style="{ background: verdict.style.bg, color: verdict.style.ink }">
     <MonthStepper :label="verdict.monthLabel" :can-prev="canPrev" :can-next="canNext" :size="size" @prev="emit('prev')" @next="emit('next')" />
     <div class="answer">
       <span class="title">{{ verdict.title }}</span>
@@ -48,15 +48,15 @@ const emit = defineEmits<{ prev: []; next: [] }>();
 .tile.night .tile-label { color: #CFC8E6; }
 
 /* Version mobile : carte de 28 px de rayon, deux tuiles côte à côte puis le solde en bandeau. */
-.size-sm { border-radius: 28px; padding: 20px; gap: 14px; }
-.size-sm .answer { gap: 4px; }
-.size-sm .title { font-size: 16px; }
-.size-sm .result { font-size: 52px; }
-.size-sm .sentence { font-size: 14px; line-height: 1.45; }
-.size-sm .tiles { grid-template-columns: 1fr 1fr; gap: 8px; }
-.size-sm .tile { padding: 10px 12px; border-radius: 16px; gap: 0; }
-.size-sm .tile-label { font-size: 13px; }
-.size-sm .tile-value { font-size: 20px; }
-.size-sm .tile.night { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: center; padding: 12px 14px; }
-.size-sm .tile.night .tile-label { font-size: 14px; }
+.is-sm { border-radius: 28px; padding: 20px; gap: 14px; }
+.is-sm .answer { gap: 4px; }
+.is-sm .title { font-size: 16px; }
+.is-sm .result { font-size: 52px; }
+.is-sm .sentence { font-size: 14px; line-height: 1.45; }
+.is-sm .tiles { grid-template-columns: 1fr 1fr; gap: 8px; }
+.is-sm .tile { padding: 10px 12px; border-radius: 16px; gap: 0; }
+.is-sm .tile-label { font-size: 13px; }
+.is-sm .tile-value { font-size: 20px; }
+.is-sm .tile.night { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: center; padding: 12px 14px; }
+.is-sm .tile.night .tile-label { font-size: 14px; }
 </style>

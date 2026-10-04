@@ -121,8 +121,11 @@ test('reads the ceiling of the year, then of the next one', async ({ page }) => 
   await years.getByRole('button', { name: '2027' }).click();
   await expect(years.getByRole('button', { name: '2027' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('img', { name: fr('Plafond 2027 : 131 500 € sur 83 600 €, 157 %') })).toBeVisible();
-  await expect(page.getByText(/Au rythme prévu, tu dépasses le plafond en juillet 2027 \(157 %\)/)).toBeVisible();
+  await expect(page.getByText(/Au rythme prévu, tu dépasses le plafond en juillet 2027 \(157\s%\)/)).toBeVisible();
   await expect(page.getByText(/Seuil de franchise de TVA dépassé en mars 2027/)).toBeVisible();
+  // Le signe % ne passe jamais seul en début de ligne : espace insécable, comme partout ailleurs (Playwright normalise les espaces, d'où la lecture brute).
+  const message = await page.getByRole('status').filter({ hasText: 'Au rythme prévu' }).textContent();
+  expect(message).toContain(`157${String.fromCharCode(0xa0)}%`);
 });
 
 test('names the next month and no client in the test mission label', async ({ page }) => {
@@ -191,5 +194,30 @@ test('keeps every control at 44 px', async ({ page }) => {
     // Colonnes des graphiques (`.chart-col`) : 15 mois dans une carte, le pas-à-pas de mois est la commande équivalente.
     const chartColumn = await el.evaluate((node) => node.classList.contains('chart-col'));
     if (!chartColumn) expect(box!.width).toBeGreaterThanOrEqual(44);
+  }
+});
+
+// Fix round 1 : le pas-à-pas ne reçoit pas la marge de la carte (une règle `.size-sm` de la carte atteignait aussi la racine de MonthStepper).
+test('keeps the month stepper flush inside the card padding', async ({ page, isMobile }) => {
+  await freshAccount(page, { file: microDemo() });
+  const card = page.locator('section', { has: page.getByText('Pour toi ce mois-ci') });
+  const arrow = card.getByRole('button', { name: 'Mois précédent' });
+  const padding = isMobile ? 20 : 28;
+  const cardBox = (await card.boundingBox())!;
+  const arrowBox = (await arrow.boundingBox())!;
+  expect(Math.round(arrowBox.x - cardBox.x)).toBe(padding);
+  expect(Math.round(arrowBox.y - cardBox.y)).toBe(padding);
+  await expect(arrow.locator('xpath=..')).toHaveCSS('padding', '0px');
+});
+
+test('shows the account badge, which links to the profile on mobile', async ({ page, isMobile }) => {
+  await freshAccount(page, { file: microDemo() });
+  if (isMobile) {
+    const badge = page.getByRole('link', { name: 'Ton profil' });
+    await expect(badge).toHaveText('GD');
+    await expect(badge).toHaveAttribute('href', '/profile');
+  } else {
+    // Barre latérale : le logo et la pastille de la ligne de profil.
+    await expect(page.getByText('GD', { exact: true })).toHaveCount(2);
   }
 });

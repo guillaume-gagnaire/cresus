@@ -94,9 +94,9 @@ export function ceilingGauge(input: EngineInput, year: number, opts: { testMissi
   return { year, actual, planned, total, ceiling: params.microCeiling, pct, level, overMonth, vatThreshold: params.vatThreshold, vatMonth };
 }
 
-/** Revenu lissé : moyenne de « pour toi » sur les 12 premiers mois ; mois sous 60 % signalés. */
+/** Revenu lissé : moyenne de « pour toi » sur les 12 premiers mois ; mois sous 60 % signalés (aucun quand la moyenne n'est pas positive : 60 % d'un négatif n'a pas de sens). */
 export function smoothedIncome(months: readonly MicroMonth[]): { average: Cents; lowMonths: MonthKey[] } {
   const first12 = months.slice(0, 12);
   const average = first12.length ? Math.round(first12.reduce((s, m) => s + m.breakdown.forYou, 0) / first12.length) : 0;
-  return { average, lowMonths: months.filter((m) => m.breakdown.forYou < average * 0.6).map((m) => m.month) };
+  return { average, lowMonths: average > 0 ? months.filter((m) => m.breakdown.forYou < average * 0.6).map((m) => m.month) : [] };
 }

@@ -5,8 +5,8 @@ export type MicroSetAside = NonNullable<ReturnType<typeof useMicroDashboard>['se
 /** Jauge du plafond de CA de l’année choisie, déjà formatée (`level` et couleurs viennent du moteur). */
 export type MicroGauge = NonNullable<ReturnType<typeof useMicroDashboard>['gauge']['value']>;
 
-/** « 26,1 % » : taux du moteur (0,261), espace insécable avant le signe. */
-const percent = (rate: number): string => `${(rate * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`;
+/** « 26,1 % » : pourcentage (26,1), espace insécable avant le signe. Un taux du moteur (0,261) passe par `percent(rate * 100)`. */
+const percent = (value: number): string => `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}\u00A0%`;
 
 export function useMicroDashboard() {
   const treso = useTresoStore();
@@ -19,8 +19,8 @@ export function useMicroDashboard() {
   const smoothed = computed(() => smoothedIncome(months.value));
   const max = computed(() => Math.max(0, months.value.length - 1));
   const select = (i: number) => { index.value = Math.min(max.value, Math.max(0, i)); };
-  /** Mois bas : sous 60 % de la moyenne lissée. Sans moyenne positive (aucun encaissement), aucun mois n’est « bas ». */
-  const isLow = (month: string): boolean => smoothed.value.average > 0 && smoothed.value.lowMonths.includes(month);
+  /** Mois bas : sous 60 % de la moyenne lissée (le moteur n’en signale aucun sans moyenne positive). */
+  const isLow = (month: string): boolean => smoothed.value.lowMonths.includes(month);
 
   const split = computed(() => {
     const b = current.value?.breakdown;
@@ -51,7 +51,7 @@ export function useMicroDashboard() {
       contributions: { title: 'Cotisations URSSAF', sub: `Déclarées et payées fin ${monthName(next)}`, amount: euros(m.breakdown.contributions) },
       tax: { title: vl ? 'Versement libératoire' : 'Impôt sur le revenu', sub: vl ? 'Payé avec tes cotisations' : 'À garder pour ta déclaration au printemps', amount: euros(m.breakdown.tax) },
       versementLiberatoire: vl,
-      versementLiberatoireRate: percent(paramsFor(yearOf(m.month)).microVersementLiberatoireRate),
+      versementLiberatoireRate: percent(paramsFor(yearOf(m.month)).microVersementLiberatoireRate * 100),
       provisionPct: treso.profile.microIncomeTaxProvisionPct,
     };
   });
@@ -66,17 +66,17 @@ export function useMicroDashboard() {
     const soft = g.level === 'OVER' ? '#FBD2CE' : g.level === 'WARN' ? '#FFF1B8' : '#CDEBD8';
     const message =
       g.level === 'OVER'
-        ? `Au rythme prévu, tu dépasses le plafond en ${monthLabel(g.overMonth!)} (${g.pct} %). Si ça se répète deux années de suite, tu sors du régime micro : anticipe le passage en société.`
+        ? `Au rythme prévu, tu dépasses le plafond en ${monthLabel(g.overMonth!)} (${percent(g.pct)}). Si ça se répète deux années de suite, tu sors du régime micro : anticipe le passage en société.`
         : g.level === 'WARN'
-          ? `Tu frôles le plafond : ${g.pct} % prévus sur ${g.year}. Garde un œil dessus.`
-          : `Tranquille : ${g.pct} % du plafond prévus sur ${g.year}.`;
+          ? `Tu frôles le plafond : ${percent(g.pct)} prévus sur ${g.year}. Garde un œil dessus.`
+          : `Tranquille : ${percent(g.pct)} du plafond prévus sur ${g.year}.`;
     const vat = g.vatMonth
       ? `Seuil de franchise de TVA dépassé en ${monthLabel(g.vatMonth)} : tu devras facturer la TVA en plus de tes prix, tout de suite ou l’année suivante selon le montant.`
       : 'Sous le seuil de franchise de TVA : tu factures sans TVA.';
     return {
       total: euros(g.total), ceiling: euros(g.ceiling), level: g.level, color, soft, message, vat,
       actualPct: (g.actual / scale) * 100, plannedPct: (g.planned / scale) * 100, vatPct: (g.vatThreshold / scale) * 100,
-      aria: `Plafond ${g.year} : ${euros(g.total)} sur ${euros(g.ceiling)}, ${g.pct} %`,
+      aria: `Plafond ${g.year} : ${euros(g.total)} sur ${euros(g.ceiling)}, ${percent(g.pct)}`,
     };
   });
 
@@ -103,8 +103,8 @@ export function useMicroDashboard() {
     const p = paramsFor(year.value);
     const frais = treso.profile ? eurosExact(treso.profile.microProExpensesMonthly) : null;
     return {
-      long: `Taux simplifiés : cotisations ${percent(p.microContributionRate)} du CA (prestations de services), versement libératoire ${percent(p.microVersementLiberatoireRate)}${frais ? `, frais pro ${frais}/mois` : ''}. Plafond ≈ ${euros(p.microCeiling)} et seuil de TVA ≈ ${euros(p.vatThreshold)} à vérifier.`,
-      short: `Taux simplifiés : ${percent(p.microContributionRate)} de cotisations, plafond ≈ ${euros(p.microCeiling)}, seuil de TVA ≈ ${euros(p.vatThreshold)}, à vérifier.`,
+      long: `Taux simplifiés : cotisations ${percent(p.microContributionRate * 100)} du CA (prestations de services), versement libératoire ${percent(p.microVersementLiberatoireRate * 100)}${frais ? `, frais pro ${frais}/mois` : ''}. Plafond ≈ ${euros(p.microCeiling)} et seuil de TVA ≈ ${euros(p.vatThreshold)} à vérifier.`,
+      short: `Taux simplifiés : ${percent(p.microContributionRate * 100)} de cotisations, plafond ≈ ${euros(p.microCeiling)}, seuil de TVA ≈ ${euros(p.vatThreshold)}, à vérifier.`,
     };
   });
 

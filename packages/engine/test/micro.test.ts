@@ -73,4 +73,15 @@ describe('smoothedIncome', () => {
     expect(smoothedIncome(withHole).lowMonths).toEqual(['2026-12']);
     expect(smoothedIncome([])).toEqual({ average: 0, lowMonths: [] });
   });
+
+  it('flags no month as low when the average is zero or negative', () => {
+    // Aucun encaissement : seuls les frais pro (180 €) pèsent, la moyenne vaut −180 € et « pour toi » −180 € chaque mois.
+    const empty = microMonths(makeInput({ profile: microProfile, clients: [], leaves: [] }));
+    const s = smoothedIncome(empty);
+    expect(s.average).toBeLessThan(0);
+    expect(s.lowMonths).toEqual([]);
+    // Moyenne nulle : « pour toi » à 0 € partout, rien n'est sous 60 % de 0.
+    const flat = empty.map((m) => ({ ...m, breakdown: { ...m.breakdown, forYou: 0 } }));
+    expect(smoothedIncome(flat)).toEqual({ average: 0, lowMonths: [] });
+  });
 });

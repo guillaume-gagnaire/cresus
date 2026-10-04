@@ -125,3 +125,16 @@ test('explains the late payments without naming any client', async ({ page, isMo
     await expect(tip).not.toContainText(/Client [A-D]/);
   }
 });
+
+// Fix round 1 : le pas-à-pas reste collé au contenu de la carte verdict (pas de marge en plus sur mobile).
+test('keeps the month stepper flush inside the verdict card', async ({ page, isMobile }) => {
+  await freshAccount(page);
+  const card = page.locator('section', { has: page.getByText('Tu es dans le rouge ce mois-ci') });
+  const arrow = card.getByRole('button', { name: 'Mois précédent' });
+  const padding = isMobile ? 20 : 30;
+  const cardBox = (await card.boundingBox())!;
+  const arrowBox = (await arrow.boundingBox())!;
+  expect(Math.round(arrowBox.x - cardBox.x)).toBe(padding);
+  expect(Math.round(arrowBox.y - cardBox.y)).toBe(padding);
+  await expect(arrow.locator('xpath=..')).toHaveCSS('padding', '0px');
+});

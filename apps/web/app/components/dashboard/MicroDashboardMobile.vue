@@ -1,13 +1,10 @@
 <script setup lang="ts">
 /** Accueil micro-entreprise, mobile (Mobile-Accueil-Micro.dc.html l. 51 à 95), mêmes blocs que le desktop en version compacte. */
-const treso = useTresoStore();
-const auth = useAuthStore();
 const {
   select, prev, next, canPrev, canNext, tiles, split, splitTotal, setAside, years, year, setYear, gauge,
   testMission, testMissionLabel, toggleTestMission, smoothed, bars, notes,
 } = useMicroDashboard();
 
-const badge = computed(() => initials(auth.me?.user.companyName ?? null, auth.me?.user.firstName ?? treso.profile?.firstName ?? ''));
 /** Les 15 colonnes tiennent en 350 px : une lettre par mois, le pas-à-pas de la première carte reste la commande de référence. */
 const letterBars = computed(() => bars.value.map((b) => ({ ...b, label: b.letter })));
 </script>
@@ -19,7 +16,7 @@ const letterBars = computed(() => bars.value.map((b) => ({ ...b, label: b.letter
         <span class="lbl">Mode micro-entreprise</span>
         <h1>Combien il te reste&#160;?</h1>
       </div>
-      <NuxtLink to="/profile" class="avatar" aria-label="Ton profil">{{ badge }}</NuxtLink>
+      <ProfileBadge size="md" link />
     </header>
 
     <StatusSwitch />
@@ -61,22 +58,6 @@ const letterBars = computed(() => bars.value.map((b) => ({ ...b, label: b.letter
 .intro { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .lbl { font-size: 14px; }
 h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
-.avatar {
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 15px;
-  background: var(--sun);
-  color: var(--ink);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 800;
-  transform: rotate(-6deg);
-}
-.avatar:hover { color: var(--ink); }
 .smooth { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .smooth-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 h2 { margin: 0; font-size: 18px; font-weight: 800; }

@@ -15,7 +15,6 @@ const isActive = (to: string): boolean => isRouteActive(route.path, to);
 
 const name = computed(() => auth.me?.user.firstName ?? '');
 const companyName = computed(() => auth.me?.user.companyName ?? null);
-const badge = computed(() => initials(companyName.value, name.value));
 const subtitle = computed(() => companyName.value?.trim() || name.value);
 
 const treso = useTresoStore();
@@ -25,7 +24,7 @@ const latest = computed(() => treso.balance);
 <template>
   <aside class="sidebar">
     <div class="brand">
-      <div class="logo" aria-hidden="true">{{ badge }}</div>
+      <ProfileBadge size="lg" />
       <div class="brand-text">
         <span class="brand-name">Ma Tréso</span>
         <span class="brand-sub">{{ subtitle }}</span>
@@ -52,7 +51,7 @@ const latest = computed(() => treso.balance);
       </NuxtLink>
 
       <NuxtLink to="/profile" class="profile" :class="{ on: isActive('/profile') }" :aria-current="isActive('/profile') ? 'page' : undefined">
-        <span class="profile-badge" aria-hidden="true">{{ badge }}</span>
+        <ProfileBadge size="sm" />
         <span class="profile-name">{{ name }}</span>
       </NuxtLink>
     </div>
@@ -77,21 +76,6 @@ const latest = computed(() => treso.balance);
   --focus: var(--sun);
 }
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 6px; }
-.logo {
-  flex: none;
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  background: var(--sun);
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 18px;
-  transform: rotate(-6deg);
-}
 .brand-text { display: flex; flex-direction: column; min-width: 0; }
 .brand-name { font-family: var(--font-display); font-weight: 800; font-size: 24px; }
 .brand-sub { font-size: 14px; color: var(--on-night-muted); overflow-wrap: anywhere; }
@@ -126,20 +110,5 @@ const latest = computed(() => treso.balance);
 }
 .profile:hover { background: var(--night-hover); color: #fff; }
 .profile.on { background: var(--night-2); color: #fff; }
-.profile-badge {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  background: var(--sun);
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 14px;
-  transform: rotate(-6deg);
-}
 .profile-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

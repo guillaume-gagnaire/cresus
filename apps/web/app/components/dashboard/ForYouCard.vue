@@ -22,7 +22,7 @@ const emit = defineEmits<{ prev: []; next: [] }>();
 </script>
 
 <template>
-  <section class="foryou" :class="[`size-${size}`, tiles.low ? 'low' : 'ok']">
+  <section class="foryou" :class="[`is-${size}`, tiles.low ? 'low' : 'ok']">
     <MonthStepper :label="tiles.monthLabel" :can-prev="canPrev" :can-next="canNext" :size="size" @prev="emit('prev')" @next="emit('next')" />
     <div class="answer">
       <span class="title">Pour toi ce mois-ci</span>
@@ -45,10 +45,10 @@ const emit = defineEmits<{ prev: []; next: [] }>();
 .low-note { font-size: 15px; font-weight: 700; }
 
 /* Version mobile : carte de 28 px de rayon, chiffre de 52 px. */
-.size-sm { border-radius: 28px; padding: 20px; gap: 14px; }
-.size-sm .answer { gap: 4px; }
-.size-sm .title { font-size: 16px; }
-.size-sm .amount { font-size: 52px; }
-.size-sm .income { font-size: 14px; }
-.size-sm .low-note { font-size: 14px; }
+.is-sm { border-radius: 28px; padding: 20px; gap: 14px; }
+.is-sm .answer { gap: 4px; }
+.is-sm .title { font-size: 16px; }
+.is-sm .amount { font-size: 52px; }
+.is-sm .income { font-size: 14px; }
+.is-sm .low-note { font-size: 14px; }
 </style>
