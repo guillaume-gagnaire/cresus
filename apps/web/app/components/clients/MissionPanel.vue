@@ -6,6 +6,7 @@ import { type BillingMode, type ClientColor, type ClientPatch, firstDayOfMonth, 
  * Sur une mission existante, chaque modification part tout de suite (champ par champ, au `change`) : le store applique le
  * changement, appelle l’API, et recharge l’état si elle refuse (par exemple `END_BEFORE_START`). En création, les mêmes champs
  * remplissent un brouillon local, envoyé en une fois par « Créer la mission ».
+ * Les champs d’identité (nom, sous-titre, couleur, piste ou signée) sont modifiables dans les deux modes.
  */
 const props = defineProps<{ clientId: string | 'new' }>();
 
@@ -17,9 +18,7 @@ const { panel } = useClientsView(computed(() => (isNew.value ? null : props.clie
 type Fields = { billingMode: BillingMode; weekdays: number[]; startDate: ISODate; endDate: ISODate | null; paymentTerm: PaymentTerm; averageDelayDays: number };
 
 /** Brouillon du formulaire de création : début au 1er du mois courant, sans fin, 30 jours, aucun retard. */
-const draft = reactive<Fields & { name: string; subtitle: string; color: ClientColor; amount: number | null; isProspect: boolean }>({
-  name: '',
-  subtitle: '',
+const draft = reactive<Fields & { color: ClientColor; amount: number | null; isProspect: boolean }>({
   color: nextColor(treso.clients.map((c) => c.color)),
   amount: null,
   isProspect: false,
@@ -38,6 +37,38 @@ function change(patch: ClientPatch): void {
   if (isNew.value) Object.assign(draft, patch);
   else void treso.updateClient(props.clientId, patch);
 }
+
+// --- Identité : nom (obligatoire), sous-titre, couleur, piste ou signée.
+// Le texte est local et part au `change` (ou à la sortie du champ, ou sur Entrée) ; un nom vidé reprend le nom enregistré.
+const nameText = ref(panel.value?.name ?? '');
+const subtitleText = ref(panel.value?.subtitle ?? '');
+watch(() => panel.value?.name, (name) => { nameText.value = name ?? ''; });
+watch(() => panel.value?.subtitle, (subtitle) => { subtitleText.value = subtitle ?? ''; });
+
+function commitName(): void {
+  const name = nameText.value.trim();
+  if (!isNew.value && !name) {
+    nameText.value = panel.value?.name ?? '';
+    return;
+  }
+  nameText.value = name;
+  if (!isNew.value && name !== panel.value?.name) change({ name });
+}
+function commitSubtitle(): void {
+  const subtitle = subtitleText.value.trim();
+  subtitleText.value = subtitle;
+  if (!isNew.value && subtitle !== panel.value?.subtitle) change({ subtitle: subtitle || null });
+}
+
+const colorOptions = Object.entries(PALETTE).map(([value, p]) => ({ value: value as ClientColor, label: p.label, ariaLabel: p.label, color: { bg: p.base, fg: p.fg } }));
+const colorKey = computed({
+  get: (): ClientColor => (isNew.value ? draft.color : panel.value?.colorKey ?? 'indigo'),
+  set: (value: ClientColor | ClientColor[]) => change({ color: Array.isArray(value) ? value[0] ?? 'indigo' : value }),
+});
+const prospect = computed({
+  get: () => (isNew.value ? draft.isProspect : panel.value?.isProspect ?? false),
+  set: (value: boolean) => change({ isProspect: value }),
+});
 
 // --- Facturation
 const MODES = [
@@ -101,22 +132,28 @@ function removeRate(id: string): void {
 const confirmDelete = ref(false);
 async function deleteClient(): Promise<void> {
   confirmDelete.value = false;
-  await treso.deleteClient(props.clientId);
-  await navigateTo('/clients');
+  // `null` : l’API a refusé (le store a déjà prévenu et rechargé), la mission est toujours là, on reste sur sa fiche.
+  if ((await treso.deleteClient(props.clientId)) !== null) await navigateTo('/clients');
 }
 
 // --- Création
-const colorOptions = Object.entries(PALETTE).map(([value, p]) => ({ value: value as ClientColor, label: p.label, color: { bg: p.base, fg: p.fg } }));
 const creating = ref(false);
+/** Message sous les jours quand on tente de créer une mission au temps passé sans aucun jour de présence. */
+const dayError = ref(false);
+watch(() => [draft.weekdays.length, draft.billingMode], () => { dayError.value = false; });
 
 async function create(): Promise<void> {
-  const name = draft.name.trim();
+  const name = nameText.value.trim();
   if (!name) return toast.error('Donne un nom à ce client.');
   if (!draft.amount || draft.amount <= 0) return toast.error(draft.billingMode === 'FORFAIT' ? 'Indique le montant du forfait.' : 'Indique ton TJM.');
+  if (draft.billingMode === 'TJM' && draft.weekdays.length === 0) {
+    dayError.value = true;
+    return;
+  }
   creating.value = true;
   const created = await treso.createClient({
     name,
-    subtitle: draft.subtitle.trim() || null,
+    subtitle: subtitleText.value.trim() || null,
     color: draft.color,
     billingMode: draft.billingMode,
     weekdays: draft.billingMode === 'FORFAIT' ? [] : draft.weekdays,
@@ -139,11 +176,14 @@ async function create(): Promise<void> {
       <AppBadge v-if="panel" :bg="panel.color.soft" fg="var(--ink)">{{ panel.badge }}</AppBadge>
     </div>
 
-    <template v-if="isNew">
-      <label class="field">Nom du client<input v-model="draft.name" type="text" autocomplete="off" maxlength="80"></label>
-      <label class="field">Sous-titre<input v-model="draft.subtitle" type="text" autocomplete="off" maxlength="80" placeholder="Via ESN, en direct…"></label>
-      <div class="field">Couleur<ChoiceChips v-model="draft.color" :options="colorOptions" ariaLabel="Couleur" /></div>
-    </template>
+    <label class="field">Nom du client
+      <input v-model="nameText" type="text" autocomplete="off" maxlength="80" @change="commitName" @blur="commitName" @keydown.enter="commitName">
+    </label>
+    <label class="field">Sous-titre
+      <input v-model="subtitleText" type="text" autocomplete="off" maxlength="80" placeholder="Via ESN, en direct…" @change="commitSubtitle" @blur="commitSubtitle" @keydown.enter="commitSubtitle">
+    </label>
+    <div class="field">Couleur<ChoiceChips v-model="colorKey" :options="colorOptions" ariaLabel="Couleur" /></div>
+    <ToggleSwitch v-model="prospect" label="Piste (pas encore signée)" />
 
     <div class="field">Facturation
       <SegmentedControl :model-value="fields.billingMode" :options="MODES" ariaLabel="Facturation" @update:model-value="setMode" />
@@ -163,6 +203,7 @@ async function create(): Promise<void> {
 
     <div v-if="fields.billingMode === 'TJM'" class="field">Jours chez ce client
       <div class="days"><ChoiceChips v-model="weekdays" :options="dayOptions" multiple ariaLabel="Jours chez ce client" /></div>
+      <p v-if="dayError" class="error" role="alert">Choisis au moins un jour de présence.</p>
     </div>
 
     <div class="dates">
@@ -179,8 +220,6 @@ async function create(): Promise<void> {
       <label :for="delayId" class="slider-label"><span>Retard moyen constaté</span><span class="num">{{ delayLabel(delay) }}</span></label>
       <input :id="delayId" type="range" min="0" max="30" step="1" :value="delay" :aria-valuetext="delayLabel(delay)" @input="onDelayInput" @change="onDelayChange">
     </div>
-
-    <label v-if="isNew" class="check"><input v-model="draft.isProspect" type="checkbox">Piste (pas encore signée)</label>
 
     <InvoicePath v-if="panel" :steps="panel.path.steps" :wait="panel.path.wait" />
 
@@ -211,7 +250,6 @@ h2 { margin: 0; font-size: 26px; font-weight: 800; overflow-wrap: anywhere; }
 .dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .no-end { min-height: 50px; display: flex; align-items: center; padding: 0 16px; border-radius: 16px; background: var(--border-soft); color: var(--muted); font-weight: 500; }
 .slider-label { display: flex; justify-content: space-between; }
-.check { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 600; cursor: pointer; }
-.check input { width: 20px; height: 20px; accent-color: var(--link); }
+.error { margin: 0; font-size: 14px; font-weight: 600; color: var(--danger); }
 .delete { align-self: flex-start; color: var(--danger); }
 </style>

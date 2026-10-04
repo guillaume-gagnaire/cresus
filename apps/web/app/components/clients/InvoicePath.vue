@@ -30,6 +30,7 @@ defineProps<{ steps: PathStep[]; wait: string }>();
 .steps .step { flex: none; min-width: 0; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 14px; }
 .steps .step span { font-size: 15px; color: var(--ink-2); }
 .steps .step.cash b { color: var(--income-ink); font-weight: 800; }
-.steps .arr { font-size: 18px; line-height: 1.2; }
+/* Couleur explicite : la couleur de `.arr` (base.css) est celle des surfaces nuit, trop pâle sur ce fond crème. */
+.steps .arr { font-size: 18px; line-height: 1.2; color: var(--muted); }
 .wait { font-size: 14px; color: var(--muted); }
 </style>

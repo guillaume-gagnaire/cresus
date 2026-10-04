@@ -1,5 +1,5 @@
 import {
-  addMonths, billedVsCashed, type BillingMode, type Cents, type Client, currentRate, daysInMonth, estimatedMonthly, euros,
+  addMonths, billedVsCashed, type BillingMode, type Cents, type Client, type ClientColor, currentRate, daysInMonth, estimatedMonthly, euros,
   eurosExact, firstInvoicePath, type ISODate, kEuros, missionTimeline, monthKey, monthLabel, monthName, monthShort, nextRate,
   PAYMENT_TERMS, plural, type PaymentTerm, rateHistory, type RateStatus, shortDate,
 } from '@matreso/engine';
@@ -44,7 +44,11 @@ export interface PathStep {
 export interface MissionPanelView {
   id: string;
   name: string;
+  /** Sous-titre ; chaîne vide quand il n’y en a pas. */
+  subtitle: string;
+  colorKey: ClientColor;
   color: { base: string; fg: string; soft: string };
+  isProspect: boolean;
   badge: string;
   billingMode: BillingMode;
   modeHelp: string;
@@ -185,7 +189,10 @@ export function useClientsView(selectedId: Ref<string | null>) {
     return {
       id: c.id,
       name: c.name,
+      subtitle: c.subtitle ?? '',
+      colorKey: c.color,
       color: PALETTE[c.color],
+      isProspect: c.isProspect,
       badge: statusLabel(c, today),
       billingMode: c.billingMode,
       modeHelp: MODE_HELP[c.billingMode],
