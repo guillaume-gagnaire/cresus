@@ -1,42 +1,24 @@
-import { BILLING_MODES, CLIENT_COLORS, LEAVE_SCOPES, LEGAL_STATUSES, PAYMENT_TERM_KEYS } from '@matreso/engine';
+import { LEAVE_SCOPES } from '@matreso/engine';
 import { z } from 'zod';
-import { cents, isoDate, signedCents } from '../common/schemas.js';
+import { isoDate, signedCents } from '../common/schemas.js';
 import { chargeInputSchema } from './charges.service.js';
+import { clientFields, rateSchema } from './clients.service.js';
+import { profileFields } from './profile.controller.js';
 
 export const exportFileSchema = z
   .object({
     format: z.literal('ma-treso'),
     version: z.literal(1),
     exportedAt: z.string(),
-    profile: z.object({
-      firstName: z.string().trim().min(1).max(60),
-      companyName: z.string().max(120).nullable(),
-      legalStatus: z.enum(LEGAL_STATUSES),
-      netPayMonthly: cents,
-      microVersementLiberatoire: z.boolean(),
-      microIncomeTaxProvisionPct: z.number().int().min(0).max(30),
-      microProExpensesMonthly: cents,
-      includeProspects: z.boolean(),
-      alertRedMonth: z.boolean(),
-      alertLatePayment: z.boolean(),
-    }),
+    profile: z.object(profileFields),
     balanceSnapshots: z.array(z.object({ date: isoDate, amount: signedCents })).max(10_000),
     clients: z
       .array(
         z.object({
+          ...clientFields,
           ref: z.string().min(1),
-          name: z.string().trim().min(1).max(80),
-          subtitle: z.string().max(80).nullable(),
-          color: z.enum(CLIENT_COLORS),
-          billingMode: z.enum(BILLING_MODES),
-          weekdays: z.array(z.number().int().min(0).max(4)).max(5),
-          startDate: isoDate,
-          endDate: isoDate.nullable(),
-          paymentTerm: z.enum(PAYMENT_TERM_KEYS),
-          averageDelayDays: z.number().int().min(0).max(30),
-          isProspect: z.boolean(),
           archived: z.boolean(),
-          rates: z.array(z.object({ validFrom: isoDate, amount: cents })).min(1),
+          rates: z.array(rateSchema).min(1).max(500),
         }),
       )
       .max(200),

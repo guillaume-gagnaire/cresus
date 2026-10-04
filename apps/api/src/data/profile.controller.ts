@@ -9,21 +9,21 @@ import { DB, type Db } from '../db/db.module.js';
 import { users } from '../db/schema.js';
 import { toProfileDto } from './mappers.js';
 
-export const profilePatchSchema = z
-  .object({
-    firstName: z.string().trim().min(1, 'Indique ton prénom.').max(60),
-    companyName: z.string().trim().max(120).nullable(),
-    legalStatus: z.enum(LEGAL_STATUSES),
-    netPayMonthly: cents.max(10_000_000, 'Rémunération trop élevée.'),
-    microVersementLiberatoire: z.boolean(),
-    microIncomeTaxProvisionPct: z.number().int().min(0, 'Entre 0 et 30 %.').max(30, 'Entre 0 et 30 %.'),
-    microProExpensesMonthly: cents,
-    includeProspects: z.boolean(),
-    alertRedMonth: z.boolean(),
-    alertLatePayment: z.boolean(),
-  })
-  .partial()
-  .strict();
+/** Champs partagés avec l'import JSON (export.schema.ts). */
+export const profileFields = {
+  firstName: z.string().trim().min(1, 'Indique ton prénom.').max(60),
+  companyName: z.string().trim().max(120).nullable(),
+  legalStatus: z.enum(LEGAL_STATUSES),
+  netPayMonthly: cents.max(10_000_000, 'Rémunération trop élevée.'),
+  microVersementLiberatoire: z.boolean(),
+  microIncomeTaxProvisionPct: z.number().int().min(0, 'Entre 0 et 30 %.').max(30, 'Entre 0 et 30 %.'),
+  microProExpensesMonthly: cents,
+  includeProspects: z.boolean(),
+  alertRedMonth: z.boolean(),
+  alertLatePayment: z.boolean(),
+};
+
+export const profilePatchSchema = z.object(profileFields).partial().strict();
 
 @Controller('profile')
 export class ProfileController {

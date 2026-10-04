@@ -10,7 +10,8 @@ import { toClient } from './mappers.js';
 
 export const rateSchema = z.object({ validFrom: isoDate, amount: cents.refine((v) => v > 0, 'Le tarif doit être supérieur à 0 €.') }).strict();
 
-const clientFields = {
+/** Champs partagés avec l'import JSON (export.schema.ts) : une sauvegarde ne doit pas pouvoir stocker ce que la saisie refuse. */
+export const clientFields = {
   name: z.string().trim().min(1, 'Donne un nom à ce client.').max(80, 'Nom trop long.'),
   subtitle: z.string().trim().max(80).nullable(),
   color: z.enum(CLIENT_COLORS),

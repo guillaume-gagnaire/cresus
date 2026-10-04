@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { type DynamicModule, Module } from '@nestjs/common';
+import { type DynamicModule, Logger, Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AuthModule } from './auth/auth.module.js';
 import { type AppConfig, CONFIG } from './config.js';
@@ -11,6 +11,8 @@ import { SeedModule } from './seed/seed.module.js';
 @Module({})
 export class AppModule {
   static register(config: AppConfig): DynamicModule {
+    const serveFront = !!config.webDist && existsSync(config.webDist);
+    if (config.webDist && !serveFront) new Logger('AppModule').warn(`WEB_DIST introuvable : ${config.webDist} — le front ne sera pas servi`);
     return {
       module: AppModule,
       global: true,
@@ -20,7 +22,7 @@ export class AppModule {
         DataModule,
         SeedModule,
         // le front (build Nuxt) est servi avec repli SPA ; l'API (/api) n'est jamais interceptée
-        ...(config.webDist && existsSync(config.webDist)
+        ...(serveFront && config.webDist
           ? [
               ServeStaticModule.forRoot({
                 rootPath: config.webDist,

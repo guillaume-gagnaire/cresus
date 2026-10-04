@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { ExportFileV1, StateDto } from '@matreso/engine';
+import { type ExportFileV1, isWorkingDay, type StateDto } from '@matreso/engine';
 import { eq } from 'drizzle-orm';
 import { DB, type Db } from '../db/db.module.js';
 import { balanceSnapshots, charges, clients, leaves, rates, users } from '../db/schema.js';
@@ -35,6 +35,8 @@ export class TransferService {
   /** Remplace toutes les données de l'utilisateur, dans une transaction. */
   async importFile(userId: string, file: ExportFileInput): Promise<StateDto> {
     await this.db.transaction(async (tx) => {
+      // verrou sur la ligne de l'utilisateur : deux imports simultanés (double clic, deux onglets) s'exécutent l'un après l'autre au lieu de dupliquer les données
+      await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for('update');
       await tx.delete(leaves).where(eq(leaves.userId, userId));
       await tx.delete(clients).where(eq(clients.userId, userId));
       await tx.delete(charges).where(eq(charges.userId, userId));
@@ -51,7 +53,9 @@ export class TransferService {
         const uniqueRates = [...new Map(clientRates.map((r) => [r.validFrom, r])).values()];
         await tx.insert(rates).values(uniqueRates.map((r) => ({ clientId: row!.id, validFrom: r.validFrom, amount: r.amount })));
       }
-      const leaveRows = file.leaves.map((l) => ({ userId, date: l.date, scope: l.scope, clientId: l.scope === 'CLIENT' ? idByRef.get(l.clientRef!)! : null }));
+      // Les congés posés un jour non ouvré (week-end, férié) sont ignorés sans rejeter le fichier : la saisie les refuse
+      // (422 NOT_A_WORKING_DAY), l'application n'en produit donc jamais ; une sauvegarde éditée à la main reste importable.
+      const leaveRows = file.leaves.filter((l) => isWorkingDay(l.date)).map((l) => ({ userId, date: l.date, scope: l.scope, clientId: l.scope === 'CLIENT' ? idByRef.get(l.clientRef!)! : null }));
       // par lots : PostgreSQL limite une requête à 65 535 paramètres (le schéma accepte jusqu'à 20 000 congés)
       for (let i = 0; i < leaveRows.length; i += LEAVES_BATCH) {
         await tx.insert(leaves).values(leaveRows.slice(i, i + LEAVES_BATCH)).onConflictDoNothing();
