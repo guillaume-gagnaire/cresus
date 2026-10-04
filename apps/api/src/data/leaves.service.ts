@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { diffDays, LEAVE_SCOPES, type LeaveDto, workingDaysBetween } from '@matreso/engine';
+import { diffDays, isISODate, LEAVE_SCOPES, type LeaveDto, workingDaysBetween } from '@matreso/engine';
 import { and, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
 import { z } from 'zod';
 import { AppError } from '../common/app-error.js';
@@ -14,7 +14,8 @@ export const leavesInputSchema = z
   .strict()
   .refine((v) => v.scope === 'ALL' || !!v.clientId, 'Choisis chez quel client poser ce congé.')
   .refine((v) => !v.to || v.to >= v.from, 'La date de fin doit être après la date de début.')
-  .refine((v) => !v.to || diffDays(v.from, v.to) <= 366, 'Pose tes congés sur une année au plus.');
+  // zod 4 exécute les refines d'objet même si isoDate a échoué sur un champ : ne jamais appeler diffDays sur une date invalide.
+  .refine((v) => !v.to || !isISODate(v.from) || !isISODate(v.to) || diffDays(v.from, v.to) <= 366, 'Pose tes congés sur une année au plus.');
 
 export const deleteLeavesSchema = z.object({ ids: z.array(uuid).min(1).max(500) }).strict();
 

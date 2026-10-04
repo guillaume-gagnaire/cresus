@@ -41,6 +41,46 @@ describe('leaves and charges', () => {
     await agent.post('/api/leaves').send({ from: '2026-01-01', to: '2027-06-01', scope: 'ALL' }).expect(400);
   });
 
+  it('rejects unparsable dates in a range with a 400, never a 500', async () => {
+    const agent = await login();
+    const badFrom = await agent.post('/api/leaves').send({ from: 'garbage', to: '2026-12-31', scope: 'ALL' }).expect(400);
+    expect(badFrom.body).toMatchObject({ code: 'VALIDATION', message: 'Date invalide.' });
+    const badTo = await agent.post('/api/leaves').send({ from: '2026-12-01', to: 'garbage', scope: 'ALL' }).expect(400);
+    expect(badTo.body).toMatchObject({ code: 'VALIDATION', message: 'Date invalide.' });
+  });
+
+  it('creates leaves scoped to one of the user’s clients', async () => {
+    const agent = await login();
+    const { body: client } = await agent
+      .post('/api/clients')
+      .send({
+        name: 'Client A', subtitle: null, color: 'indigo', billingMode: 'TJM', weekdays: [0, 4],
+        startDate: '2026-10-01', endDate: null, paymentTerm: 'NET_30', averageDelayDays: 0, isProspect: false,
+        rate: { validFrom: '2026-10-01', amount: 65_000 },
+      })
+      .expect(201);
+    const res = await agent.post('/api/leaves').send({ from: '2026-12-28', scope: 'CLIENT', clientId: client.id }).expect(201);
+    expect(res.body.created).toBe(1);
+    expect(res.body.leaves).toEqual([expect.objectContaining({ date: '2026-12-28', scope: 'CLIENT', clientId: client.id })]);
+  });
+
+  it('isolates leaves and charges between users', async () => {
+    const a = await login();
+    const b = agentFor(app);
+    await b.post('/api/auth/register').send({ email: 'b@example.com', password: 'motdepasse1', firstName: 'B' }).expect(201);
+    const { body: leaves } = await a.post('/api/leaves').send({ from: '2026-12-28', scope: 'ALL' }).expect(201);
+    const { body: charge } = await a.post('/api/charges').send({ name: 'CFE', amount: 60_000, frequency: 'MONTHLY', month: null, category: null }).expect(201);
+
+    const stolen = await b.post('/api/leaves/delete').send({ ids: leaves.leaves.map((l: { id: string }) => l.id) }).expect(200);
+    expect(stolen.body.deleted).toBe(0);
+    await b.patch(`/api/charges/${charge.id}`).send({ amount: 1 }).expect(404);
+    await b.delete(`/api/charges/${charge.id}`).send({}).expect(404);
+
+    const state = await a.get('/api/state').expect(200);
+    expect(state.body.leaves).toHaveLength(1);
+    expect(state.body.charges).toEqual([expect.objectContaining({ id: charge.id, amount: 60_000 })]);
+  });
+
   it('deletes leaves by id', async () => {
     const agent = await login();
     const { body } = await agent.post('/api/leaves').send({ from: '2026-12-28', to: '2026-12-29', scope: 'ALL' }).expect(201);
