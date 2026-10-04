@@ -1,0 +1,19 @@
+{
+  "name": "ma-treso",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=24.11"
+  },
+  "scripts": {
+    "build": "npm run build -w @matreso/engine && npm run build -w @matreso/web --if-present && npm run build -w @matreso/api --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev": "npm run build -w @matreso/engine && concurrently -k -n api,web \"npm run dev -w @matreso/api\" \"npm run dev -w @matreso/web\""
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
