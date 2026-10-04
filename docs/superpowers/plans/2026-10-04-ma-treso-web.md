@@ -4,7 +4,7 @@
 
 Suite de `2026-10-04-ma-treso.md` et `2026-10-04-ma-treso-api.md`. Les sections **Global Constraints**, **Review Focus** et **Conventions de code** du premier fichier s'appliquent ici. Spec : `docs/superpowers/specs/2026-10-04-ma-treso-design.md` §5 et §6.
 
-**Prérequis :** Phases 1 et 2 terminées, Docker Desktop lancé (`docker compose up -d db`).
+**Prérequis :** Phases 1 et 2 terminées. Aucun Docker : Playwright démarre l'API avec `apps/api/.env.e2e` (PGlite en mémoire, compte de démo semé) et Nuxt en dev.
 
 ## Comment porter une maquette
 
@@ -555,7 +555,7 @@ test('navigates between the four sections', async ({ page, isMobile }) => {
 - [ ] **Step 7: Vérifier**
 
 Run : `npm run test:e2e -w @matreso/web -- shell.spec.ts`
-Expected : 4 tests PASS (2 tests × 2 projets). Le premier lancement démarre l'API (base `matreso_e2e`) et Nuxt.
+Expected : 4 tests PASS (2 tests × 2 projets). Le premier lancement démarre l'API (PGlite en mémoire) et Nuxt.
 Run : `npm run typecheck -w @matreso/web && npm run build -w @matreso/web`
 Expected : OK, `apps/web/.output/public/index.html` généré.
 
@@ -2162,11 +2162,11 @@ git commit -m "feat(web): PWA installable (manifest, service worker, icônes)"
 
 # Phase 4 — Livraison
 
-### Task 34: Image Docker, compose et Playwright contre l'image
+### Task 34: Image Docker, compose et Playwright contre le build de production
 
 **Files:**
-- Create : `Dockerfile`, `.dockerignore`, `apps/web/e2e/mobile.spec.ts`
-- Modify : `docker-compose.yml` (service `app`), `package.json` racine (script `e2e:docker`)
+- Create : `Dockerfile`, `.dockerignore`, `apps/web/e2e/mobile.spec.ts`, `scripts/e2e-prod.mjs`
+- Modify : `docker-compose.yml` (service `app`), `package.json` racine (script `e2e:prod`)
 
 **Interfaces:**
 - Consumes : builds des trois workspaces, `WEB_DIST` (Task 20).
@@ -2290,26 +2290,39 @@ Ajouter à `docker-compose.yml` :
     ports:
       - "${APP_PORT:-3000}:3000"
 ```
-Script racine : `"e2e:docker": "docker compose up -d --build app && cross-env E2E_BASE_URL=http://localhost:3000 npm run test:e2e -w @matreso/web"`. `cross-env` n'étant pas installé, écrire plutôt un petit script Node `scripts/e2e-docker.mjs` qui positionne `process.env.E2E_BASE_URL` et lance `npx playwright test` via `child_process.spawnSync`, avec `stdio: 'inherit'`. Pour ce lancement, l'app doit tourner avec `AUTH_RATE_LIMIT=10000` (passé à `docker compose` via l'environnement par le script).
+- [ ] **Step 4: e2e contre le build de production, en local et sans Docker**
 
-- [ ] **Step 4: Vérifier l'image**
+Créer `scripts/e2e-prod.mjs`, avec le script racine `"e2e:prod": "node scripts/e2e-prod.mjs"`. Le script Node doit, sans dépendance ajoutée :
+1. lancer `npm run build` à la racine (`child_process.spawnSync`, `stdio: 'inherit'`, `shell: true`) ;
+2. démarrer `node apps/api/dist/main.js` (`spawn`) avec l'environnement `NODE_ENV=production`, `PORT=3100`, `DATABASE_URL=pglite:memory`, `SESSION_SECRET=e2e-prod-secret-e2e-prod-secret`, `WEB_DIST=<chemin absolu de apps/web/.output/public>`, `SEED_DEMO=true`, `COOKIE_SECURE=false`, `AUTH_RATE_LIMIT=10000`, `WEBAUTHN_ORIGIN=http://localhost:3100` ;
+3. attendre que `GET http://localhost:3100/api/health` réponde 200 (boucle `fetch`, 60 s au plus) ;
+4. lancer `npx playwright test` dans `apps/web`, avec `E2E_BASE_URL=http://localhost:3100` ;
+5. arrêter le serveur dans tous les cas (`finally`) et renvoyer le code de sortie de Playwright.
 
 Run :
 ```bash
+node scripts/e2e-prod.mjs
+```
+Expected : toute la suite Playwright PASS contre l'API qui sert le front construit (même topologie que l'image : un process, un port), y compris `pwa.spec.ts` et le repli SPA.
+
+- [ ] **Step 5: Vérifier l'image Docker (si le démon Docker est disponible)**
+
+Run (seulement si `docker info` répond) :
+```bash
 docker compose build app
-AUTH_RATE_LIMIT=10000 docker compose up -d app
+docker compose up -d app
 curl -fsS http://localhost:3000/api/health
 curl -fsS http://localhost:3000/ | grep -o '<title>[^<]*'
 curl -fsS -o /dev/null -w '%{http_code}\n' http://localhost:3000/calendar
-node scripts/e2e-docker.mjs
+docker compose down
 ```
-Expected : `{"status":"ok","db":"ok"}`, `<title>Ma Tréso`, `200` (repli SPA), puis toute la suite Playwright PASS contre l'image, y compris `pwa.spec.ts`. Ensuite, connexion manuelle possible avec `demo@matreso.fr` / `demo1234`.
+Expected : `{"status":"ok","db":"ok"}`, `<title>Ma Tréso`, `200`. Si Docker n'est pas disponible, l'indiquer dans le rapport (statut DONE_WITH_CONCERNS) sans bloquer la tâche.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add Dockerfile .dockerignore docker-compose.yml package.json scripts apps/web/e2e/mobile.spec.ts
-git commit -m "build: image Docker unique (API + front), compose et e2e contre l'image"
+git commit -m "build: image Docker unique (API + front), compose et e2e sur le build de production"
 ```
 
 ### Task 35: README et vérification finale
@@ -2322,8 +2335,8 @@ git commit -m "build: image Docker unique (API + front), compose et e2e contre l
 Réécrire `README.md` (en français) avec :
 - une phrase de présentation ;
 - une capture des parcours (optionnel) ;
-- **Démarrer en local** : prérequis (Node 24, Docker), `cp .env.example .env`, `docker compose up -d db`, `npm install`, `npm run dev`, ouvrir http://localhost:3000, compte de démo ;
-- **Tests** : moteur (`npm run test -w @matreso/engine`, couverture ≥ 90 %), API (`npm run test -w @matreso/api`), e2e (`npm run test:e2e -w @matreso/web`), e2e contre l'image (`node scripts/e2e-docker.mjs`) ;
+- **Démarrer en local** (sans Docker) : prérequis (Node 24), `npm install`, `cp .env.example .env` (optionnel : par défaut, PGlite dans `apps/api/.data/pglite`), `npm run dev`, ouvrir http://localhost:3000, compte de démo `demo@matreso.fr` / `demo1234` ;
+- **Tests** : moteur (`npm run test -w @matreso/engine`, couverture ≥ 90 %), API (`npm run test -w @matreso/api`), e2e en dev (`npm run test:e2e -w @matreso/web`), e2e sur le build de production (`npm run e2e:prod`), le tout sans Docker grâce à PGlite ;
 - **Déployer** : `docker build -t ma-treso .`, puis le tableau des variables d'environnement (repris de `.env.example`, avec obligatoire/défaut). En production : `SESSION_SECRET` long et aléatoire, `COOKIE_SECURE=true` derrière HTTPS, `WEBAUTHN_RP_ID` = domaine exact, `WEBAUTHN_ORIGIN` = `https://domaine`, `SEED_DEMO=false` ;
 - **Architecture** : schéma texte des trois workspaces et rôle de chacun ;
 - **Limites v1** : paramètres réglementaires approximatifs (SPEC §9.1), pas de TVA, pas d'envoi d'e-mail.
@@ -2338,7 +2351,7 @@ npm run test -w @matreso/api
 npm run typecheck -w @matreso/api
 npm run typecheck -w @matreso/web
 npm run build
-node scripts/e2e-docker.mjs
+npm run e2e:prod
 ```
 Expected : tout passe. Relire la table « Correspondance avec les critères d'acceptation » de la spec (§7) et cocher chaque ligne avec le test qui la prouve. Tout écart est corrigé avant de conclure, ou signalé explicitement.
 

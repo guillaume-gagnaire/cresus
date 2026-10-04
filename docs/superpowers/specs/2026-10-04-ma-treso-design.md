@@ -10,7 +10,7 @@ Ce document décrit **comment** construire l'app décrite dans `SPEC.md` (le **q
 | --- | --- | --- |
 | Front | Vue 3 + Nuxt 4, mode SPA (`ssr: false`, `nuxt generate`) | demande utilisateur |
 | Back | NestJS (dernière majeure) | demande utilisateur |
-| Base | PostgreSQL 16, ORM Drizzle (`drizzle-orm` + `drizzle-kit`) | demande utilisateur + SPEC §8.1 |
+| Base | PostgreSQL 16 en production ; **PGlite** (PostgreSQL embarqué en WASM, sans Docker) en dev et en tests. ORM Drizzle (`drizzle-orm` + `drizzle-kit`), un seul schéma `pg-core` | demande utilisateur + SPEC §8.1 ; tests locaux sans Docker (choix utilisateur) |
 | Déploiement | **Une seule image Docker** : NestJS sert l'API sous `/api` et le build statique de Nuxt | approche A validée |
 | Calcul | Moteur TS pur partagé (`packages/engine`), exécuté **dans le navigateur** ; l'API l'utilise seulement pour valider | SPEC §8.4 |
 | Auth v1 | E-mail + mot de passe, **passkeys (Face ID / Touch ID / Windows Hello)**. Pas de lien magique ni d'envoi d'e-mail. | choix utilisateur |
@@ -68,7 +68,7 @@ Monorepo **npm workspaces** :
 │  │  │  ├─ data/            # export / import / suppression du compte
 │  │  │  ├─ seed/            # compte de démo
 │  │  │  └─ health/
-│  │  └─ test/               # e2e (vraie base PostgreSQL)
+│  │  └─ test/               # e2e (PGlite en mémoire)
 │  └─ web/                   # @matreso/web — Nuxt 4
 │     ├─ nuxt.config.ts
 │     ├─ app/
@@ -253,7 +253,7 @@ Si `SEED_DEMO=true`, le démarrage crée le compte `demo@matreso.fr` (mot de pas
 
 ### 4.6 Tests
 
-Les tests e2e (Vitest + `unplugin-swc` + supertest) tournent sur une vraie base PostgreSQL (`DATABASE_URL_TEST`, fournie par `docker compose up -d db`). Ils couvrent :
+Les tests e2e (Vitest + `unplugin-swc` + supertest) tournent sur PGlite en mémoire (`DATABASE_URL=pglite:memory`, un dialecte PostgreSQL réel), sans Docker. `DATABASE_URL_TEST=postgres://…` permet de viser un vrai PostgreSQL. Ils couvrent :
 
 - inscription, connexion et déconnexion, isolation entre deux utilisateurs ;
 - refus d'un congé un week-end ou un jour férié, interdiction de supprimer le dernier tarif, upsert d'un tarif ;
@@ -310,7 +310,7 @@ Un middleware global redirige vers `/login` sans session, et vers `/` si l'utili
 
 ### 5.6 Tests
 
-- Playwright sur l'app construite (`docker compose up`) :
+- Playwright, sans Docker, en dev (API sur PGlite en mémoire + Nuxt) et sur le build de production (l'API sert le front construit, `npm run e2e:prod`) :
   - connexion au compte de démo ;
   - verdict d'octobre (« −2 310 € », « 46 010 € ») ;
   - pose puis retrait d'un congé depuis le calendrier ;
@@ -328,7 +328,7 @@ Un middleware global redirige vers `/login` sans session, et vers `/` si l'utili
 - L'image tourne avec l'utilisateur `node`, expose le port `3000` et déclare un `HEALTHCHECK` sur `/api/health`.
 - **docker-compose.yml** : `db` (postgres:16-alpine, volume nommé) et `app` (build local, `depends_on` avec healthcheck).
 - **Variables d'env** (`.env.example`) : `DATABASE_URL`, `SESSION_SECRET` (signature des cookies de challenge), `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`, `WEBAUTHN_RP_NAME=Ma Tréso`, `PORT=3000`, `NODE_ENV`, `SEED_DEMO`, `SEED_DEMO_PASSWORD`, `COOKIE_SECURE`.
-- **Dev local** : `docker compose up -d db`, puis `npm run dev`, qui lance l'API Nest en watch sur le port 3001 et Nuxt sur le port 3000 avec un proxy `/api` → 3001.
+- **Dev local** (sans Docker) : `npm run dev` (base PGlite persistante dans `apps/api/.data/pglite` par défaut, `DATABASE_URL=pglite:<dossier>`), qui lance l'API Nest en watch sur le port 3001 et Nuxt sur le port 3000 avec un proxy `/api` → 3001.
 
 ## 7. Correspondance avec les critères d'acceptation (SPEC §9.3)
 

@@ -4,19 +4,18 @@
 
 Suite de `2026-10-04-ma-treso.md`. Les sections **Global Constraints**, **Review Focus** et **Conventions de code** de ce fichier s'appliquent ici aussi. Spec : `docs/superpowers/specs/2026-10-04-ma-treso-design.md` §4.
 
-**Prérequis :** Phase 1 terminée (`@matreso/engine` construit) et Docker Desktop lancé.
+**Prérequis :** Phase 1 terminée (`@matreso/engine` construit). **Aucun Docker requis** : en dev et en test, la base est **PGlite** (PostgreSQL embarqué en WASM, paquet `@electric-sql/pglite`), sélectionnée par `DATABASE_URL=pglite:memory` (en mémoire) ou `pglite:<dossier>` (persistant). Toute autre URL (`postgres://…`) utilise `pg` : c'est le cas de la production (image Docker).
 
 **Rappels propres à l'API :**
 - NestJS 12 est **ESM** (`"type": "module"`). Le code est compilé par `tsc` (TS ~5.9, `experimentalDecorators` + `emitDecoratorMetadata`), avec `module: NodeNext` : **les imports relatifs prennent l'extension `.js`** (`import { AppError } from '../common/app-error.js'`).
 - Ne pas ajouter `@nestjs/throttler` (ses peer dependencies ne couvrent pas forcément Nest 12) : un garde de limitation de débit maison est fourni en Task 15.
 - Si une API de Nest 12 diffère de ce qui est écrit ici (signature, option), suivre les types installés et le noter dans le message de commit. Ne pas rétrograder Nest sans le signaler.
-- Tests e2e : Vitest + `unplugin-swc` (esbuild n'émet pas les métadonnées de décorateurs) + supertest, sur la base `matreso_test` du conteneur `db`.
+- Tests e2e : Vitest + `unplugin-swc` (esbuild n'émet pas les métadonnées de décorateurs) + supertest, chacun sur une base PGlite en mémoire (`pglite:memory`). Un seul schéma Drizzle `pg-core` sert les deux pilotes.
 
 ## Carte des fichiers (Phase 2)
 
 ```
-docker-compose.yml                 # service db (le service app arrive en Task 34)
-docker/initdb/01-test-dbs.sql      # crée matreso_test et matreso_e2e
+docker-compose.yml                 # service db PostgreSQL pour un usage type prod (le service app arrive en Task 34)
 .env.example
 apps/api/
   package.json · tsconfig.json · tsconfig.build.json · vitest.config.ts · drizzle.config.ts · .env.e2e
@@ -28,7 +27,7 @@ apps/api/
     config.ts                      # loadConfig(env) + jeton CONFIG
     common/ app-error.ts error.filter.ts zod.pipe.ts schemas.ts json-only.middleware.ts
             public.decorator.ts current-user.decorator.ts rate-limit.guard.ts
-    db/ schema.ts db.module.ts migrate.ts
+    db/ schema.ts client.ts db.module.ts migrate.ts
     health/ health.controller.ts
     auth/ auth.module.ts password.ts session.service.ts session.guard.ts cookies.ts
           auth.service.ts auth.controller.ts passkey.service.ts passkey.controller.ts
@@ -46,12 +45,12 @@ apps/api/
 ### Task 14: Socle API (config, Drizzle, migrations, health, harnais e2e)
 
 **Files:**
-- Create : tous les fichiers `apps/api/{package.json,tsconfig.json,tsconfig.build.json,vitest.config.ts,drizzle.config.ts,.env.e2e}`, `apps/api/src/{main.ts,bootstrap.ts,app.module.ts,config.ts}`, `apps/api/src/common/{app-error.ts,error.filter.ts,zod.pipe.ts,schemas.ts,json-only.middleware.ts}`, `apps/api/src/db/{schema.ts,db.module.ts,migrate.ts}`, `apps/api/src/health/health.controller.ts`, `apps/api/test/{helpers.ts,health.e2e.test.ts}`, `docker-compose.yml`, `docker/initdb/01-test-dbs.sql`, `.env.example`
+- Create : tous les fichiers `apps/api/{package.json,tsconfig.json,tsconfig.build.json,vitest.config.ts,drizzle.config.ts,.env.e2e}`, `apps/api/src/{main.ts,bootstrap.ts,app.module.ts,config.ts}`, `apps/api/src/common/{app-error.ts,error.filter.ts,zod.pipe.ts,schemas.ts,json-only.middleware.ts}`, `apps/api/src/db/{schema.ts,client.ts,db.module.ts,migrate.ts}`, `apps/api/src/health/health.controller.ts`, `apps/api/test/{helpers.ts,health.e2e.test.ts}`, `docker-compose.yml`, `.env.example`
 - Modify : `.gitignore` (ajouter `!apps/api/.env.e2e`)
 
 **Interfaces:**
 - Consumes : `LEGAL_STATUSES`, `PAYMENT_TERM_KEYS`, `BILLING_MODES`, `CLIENT_COLORS`, `LEAVE_SCOPES`, `CHARGE_FREQUENCIES`, `isISODate` de `@matreso/engine`.
-- Produces : `loadConfig(env): AppConfig`, `CONFIG` (jeton d'injection), `AppConfig`, `DB` (jeton), `type Db`, tables Drizzle `users`, `sessions`, `passkeys`, `balanceSnapshots`, `clients`, `rates`, `leaves`, `charges`, `createApp(config): Promise<NestExpressApplication>`, `AppError(status, code, message)`, `notFound(what)`, `ZodPipe(schema)`, helpers zod `isoDate`, `cents`, `signedCents`, et pour les tests `setupTestApp()`, `resetDb(app)`, `json(agentOrRequest)`.
+- Produces : `loadConfig(env): AppConfig`, `CONFIG` (jeton d'injection), `AppConfig`, `DB` (jeton), `type Db`, `DB_HANDLE` (jeton), `parseDbTarget(url)`, `openDb(url): Promise<DbHandle>`, `runMigrations(handle)`, tables Drizzle `users`, `sessions`, `passkeys`, `balanceSnapshots`, `clients`, `rates`, `leaves`, `charges`, `createApp(config): Promise<NestExpressApplication>`, `AppError(status, code, message)`, `notFound(what)`, `ZodPipe(schema)`, helpers zod `isoDate`, `cents`, `signedCents`, et pour les tests `setupTestApp()`, `resetDb(app)`, `json(agentOrRequest)`.
 
 - [ ] **Step 1: Infra locale**
 
@@ -68,7 +67,6 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U matreso"]
       interval: 5s
@@ -77,18 +75,14 @@ services:
 volumes:
   db-data: {}
 ```
-
-`docker/initdb/01-test-dbs.sql` :
-```sql
-CREATE DATABASE matreso_test;
-CREATE DATABASE matreso_e2e;
-```
+(Ce service ne sert qu'à un usage type production avec l'image Docker, en Task 34. Le dev et les tests n'en ont pas besoin.)
 
 `.env.example` :
 ```dotenv
-# Base PostgreSQL
-DATABASE_URL=postgres://matreso:matreso@localhost:5432/matreso
-# Secret de signature des cookies (≥ 16 caractères, à changer en production)
+# Base : PGlite en local (dossier persistant, ou pglite:memory), PostgreSQL en production
+# ex. prod : DATABASE_URL=postgres://matreso:matreso@db:5432/matreso
+DATABASE_URL=pglite:./.data/pglite
+# Secret de signature des cookies (≥ 16 caractères, OBLIGATOIRE en production)
 SESSION_SECRET=change-me-change-me-change-me
 # Port HTTP de l'API (3001 en dev, 3000 dans l'image Docker)
 PORT=3001
@@ -108,7 +102,7 @@ WEB_DIST=
 
 `apps/api/.env.e2e` (valeurs de test, sans secret réel) :
 ```dotenv
-DATABASE_URL=postgres://matreso:matreso@localhost:5432/matreso_e2e
+DATABASE_URL=pglite:memory
 SESSION_SECRET=e2e-secret-e2e-secret-e2e
 PORT=3001
 NODE_ENV=test
@@ -120,10 +114,7 @@ SEED_DEMO_PASSWORD=demo1234
 AUTH_RATE_LIMIT=10000
 ```
 
-Ajouter `!apps/api/.env.e2e` à la fin de `.gitignore`.
-
-Run : `docker compose up -d db` puis `docker compose ps`
-Expected : `db` est `healthy`.
+Ajouter `!apps/api/.env.e2e` à la fin de `.gitignore` (`.data/` y est déjà ignoré).
 
 - [ ] **Step 2: Package API**
 
@@ -209,7 +200,7 @@ export default defineConfig({
 Run :
 ```bash
 export PATH="/c/Users/guill/AppData/Roaming/nvm/v24.14.0:$PATH"
-npm i -w @matreso/api @nestjs/common@^12 @nestjs/core@^12 @nestjs/platform-express@^12 reflect-metadata rxjs drizzle-orm pg zod cookie-parser @matreso/engine@*
+npm i -w @matreso/api @nestjs/common@^12 @nestjs/core@^12 @nestjs/platform-express@^12 reflect-metadata rxjs drizzle-orm pg @electric-sql/pglite zod cookie-parser @matreso/engine@*
 npm i -D -w @matreso/api typescript@~5.9 drizzle-kit @types/pg @types/cookie-parser @types/express @types/node vitest unplugin-swc @swc/core supertest @types/supertest concurrently
 ```
 Expected : installation sans erreur ERESOLVE. En cas de conflit de peer dependencies, le signaler plutôt que de passer `--force`.
@@ -223,8 +214,8 @@ import { z } from 'zod';
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL manquant'),
-  SESSION_SECRET: z.string().min(16, 'SESSION_SECRET doit faire au moins 16 caractères'),
+  DATABASE_URL: z.string().min(1).default('pglite:./.data/pglite'),
+  SESSION_SECRET: z.string().min(16, 'SESSION_SECRET doit faire au moins 16 caractères').optional(),
   WEBAUTHN_RP_ID: z.string().default('localhost'),
   WEBAUTHN_RP_NAME: z.string().default('Ma Tréso'),
   WEBAUTHN_ORIGIN: z.string().default('http://localhost:3000'),
@@ -253,11 +244,12 @@ export const CONFIG = Symbol('CONFIG');
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const e = envSchema.parse(env);
+  if (e.NODE_ENV === 'production' && !e.SESSION_SECRET) throw new Error('SESSION_SECRET est obligatoire en production');
   return {
     nodeEnv: e.NODE_ENV,
     port: e.PORT,
     databaseUrl: e.DATABASE_URL,
-    sessionSecret: e.SESSION_SECRET,
+    sessionSecret: e.SESSION_SECRET ?? 'dev-only-secret-dev-only-secret',
     webauthn: { rpId: e.WEBAUTHN_RP_ID, rpName: e.WEBAUTHN_RP_NAME, origin: e.WEBAUTHN_ORIGIN },
     cookieSecure: e.COOKIE_SECURE ? e.COOKIE_SECURE === 'true' : e.NODE_ENV === 'production',
     seedDemo: e.SEED_DEMO === 'true',
@@ -476,46 +468,100 @@ export const charges = pgTable('charges', {
 }, (t) => [index('charges_user_idx').on(t.userId)]);
 ```
 
-`src/db/db.module.ts` :
+`src/db/client.ts` (ouverture de la base selon `DATABASE_URL`, sans Nest) :
 ```ts
-import { Global, Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
-import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { mkdirSync } from 'node:fs';
+import { PGlite } from '@electric-sql/pglite';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
 import pg from 'pg';
-import { type AppConfig, CONFIG } from '../config.js';
 import * as schema from './schema.js';
 
-export type Db = NodePgDatabase<typeof schema>;
-export const DB = Symbol('DB');
-export const PG_POOL = Symbol('PG_POOL');
+/** Type commun aux deux pilotes (node-postgres en prod, PGlite en dev/test). */
+export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
 
-@Global()
-@Module({
-  providers: [
-    { provide: PG_POOL, inject: [CONFIG], useFactory: (config: AppConfig) => new pg.Pool({ connectionString: config.databaseUrl, max: 10 }) },
-    { provide: DB, inject: [PG_POOL], useFactory: (pool: pg.Pool): Db => drizzle({ client: pool, schema }) },
-  ],
-  exports: [DB, PG_POOL],
-})
-export class DbModule implements OnApplicationShutdown {
-  constructor(@Inject(PG_POOL) private readonly pool: pg.Pool) {}
+export type DbTarget = { kind: 'pglite'; dataDir: string | null } | { kind: 'postgres'; url: string };
 
-  async onApplicationShutdown(): Promise<void> {
-    await this.pool.end();
+export interface DbHandle {
+  db: Db;
+  target: DbTarget;
+  close(): Promise<void>;
+}
+
+/** `pglite:memory` → PGlite en mémoire ; `pglite:<dossier>` → PGlite persistant ; sinon URL PostgreSQL. */
+export function parseDbTarget(url: string): DbTarget {
+  if (url === 'pglite:memory') return { kind: 'pglite', dataDir: null };
+  if (url.startsWith('pglite:')) return { kind: 'pglite', dataDir: url.slice('pglite:'.length) };
+  return { kind: 'postgres', url };
+}
+
+export async function openDb(url: string): Promise<DbHandle> {
+  const target = parseDbTarget(url);
+  if (target.kind === 'pglite') {
+    if (target.dataDir) mkdirSync(target.dataDir, { recursive: true });
+    const client = target.dataDir ? new PGlite(target.dataDir) : new PGlite();
+    await client.waitReady;
+    return { db: drizzlePglite({ client, schema }) as unknown as Db, target, close: () => client.close() };
   }
+  const pool = new pg.Pool({ connectionString: target.url, max: 10 });
+  return { db: drizzlePg({ client: pool, schema }) as unknown as Db, target, close: () => pool.end() };
 }
 ```
+(Les deux bases de données Drizzle partagent la même API de requêtes `pg-core`. Le cast vers `Db` est nécessaire, car leurs types de résultat bruts (`execute`) diffèrent ; le code applicatif n'utilise `execute` que pour `select 1` et `TRUNCATE`.)
 
 `src/db/migrate.ts` :
 ```ts
 import { fileURLToPath } from 'node:url';
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import type { Db } from './db.module.js';
+import type { DbHandle } from './client.js';
 
 /** apps/api/drizzle, que l'on parte de src/db (tests) ou de dist/db (build). */
 export const MIGRATIONS_FOLDER = fileURLToPath(new URL('../../drizzle', import.meta.url));
 
-export async function runMigrations(db: Db): Promise<void> {
-  await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
+export async function runMigrations(handle: DbHandle): Promise<void> {
+  if (handle.target.kind === 'pglite') {
+    const { migrate } = await import('drizzle-orm/pglite/migrator');
+    await migrate(handle.db as never, { migrationsFolder: MIGRATIONS_FOLDER });
+  } else {
+    const { migrate } = await import('drizzle-orm/node-postgres/migrator');
+    await migrate(handle.db as never, { migrationsFolder: MIGRATIONS_FOLDER });
+  }
+}
+```
+
+`src/db/db.module.ts` (les migrations sont jouées à l'ouverture, avant tout autre provider) :
+```ts
+import { Global, Inject, Module, type OnApplicationShutdown } from '@nestjs/common';
+import { type AppConfig, CONFIG } from '../config.js';
+import { type Db, type DbHandle, openDb } from './client.js';
+import { runMigrations } from './migrate.js';
+
+export type { Db } from './client.js';
+export const DB = Symbol('DB');
+export const DB_HANDLE = Symbol('DB_HANDLE');
+
+@Global()
+@Module({
+  providers: [
+    {
+      provide: DB_HANDLE,
+      inject: [CONFIG],
+      useFactory: async (config: AppConfig): Promise<DbHandle> => {
+        const handle = await openDb(config.databaseUrl);
+        await runMigrations(handle);
+        return handle;
+      },
+    },
+    { provide: DB, inject: [DB_HANDLE], useFactory: (handle: DbHandle): Db => handle.db },
+  ],
+  exports: [DB, DB_HANDLE],
+})
+export class DbModule implements OnApplicationShutdown {
+  constructor(@Inject(DB_HANDLE) private readonly handle: DbHandle) {}
+
+  async onApplicationShutdown(): Promise<void> {
+    await this.handle.close();
+  }
 }
 ```
 
@@ -524,7 +570,7 @@ Générer la première migration :
 npm run build -w @matreso/engine
 npm run db:generate -w @matreso/api
 ```
-Expected : `apps/api/drizzle/0000_*.sql` créé, avec les 8 tables, les 6 enums et la contrainte `NULLS NOT DISTINCT` sur `leaves`.
+Expected : `apps/api/drizzle/0000_*.sql` créé, avec les 8 tables, les 6 enums et la contrainte `NULLS NOT DISTINCT` sur `leaves` (`drizzle-kit generate` ne se connecte à aucune base).
 
 - [ ] **Step 5: Module, bootstrap, health**
 
@@ -578,9 +624,8 @@ import { AppModule } from './app.module.js';
 import { AppErrorFilter } from './common/error.filter.js';
 import { jsonOnlyMutations } from './common/json-only.middleware.js';
 import { type AppConfig, loadConfig } from './config.js';
-import { DB, type Db } from './db/db.module.js';
-import { runMigrations } from './db/migrate.js';
 
+/** Les migrations sont jouées par DbModule à l'ouverture de la base. */
 export async function createApp(config: AppConfig = loadConfig()): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule.register(config), {
     logger: config.nodeEnv === 'test' ? false : ['log', 'warn', 'error'],
@@ -591,7 +636,6 @@ export async function createApp(config: AppConfig = loadConfig()): Promise<NestE
   app.use(jsonOnlyMutations);
   app.useGlobalFilters(new AppErrorFilter());
   app.enableShutdownHooks();
-  await runMigrations(app.get<Db>(DB));
   return app;
 }
 ```
@@ -622,7 +666,8 @@ export async function setupTestApp(overrides: Record<string, string> = {}): Prom
   const config = loadConfig({
     ...process.env,
     NODE_ENV: 'test',
-    DATABASE_URL: process.env.DATABASE_URL_TEST ?? 'postgres://matreso:matreso@localhost:5432/matreso_test',
+    // PGlite en mémoire par défaut ; DATABASE_URL_TEST=postgres://… permet de viser un vrai PostgreSQL
+    DATABASE_URL: process.env.DATABASE_URL_TEST ?? 'pglite:memory',
     SESSION_SECRET: 'test-secret-test-secret',
     SEED_DEMO: 'false',
     ...overrides,
@@ -677,7 +722,7 @@ Expected : 3 tests PASS, `dist/main.js` généré, typecheck OK.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add docker-compose.yml docker .env.example .gitignore apps/api package.json package-lock.json
+git add docker-compose.yml .env.example .gitignore apps/api package.json package-lock.json
 git commit -m "feat(api): socle NestJS, schéma Drizzle, migrations et healthcheck"
 ```
 
