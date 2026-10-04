@@ -28,7 +28,7 @@ export class SeedService implements OnApplicationBootstrap {
     const file = demoExportFile();
     const [user] = await this.db
       .insert(users)
-      .values({ email: DEMO_EMAIL, passwordHash: await hashPassword(this.config.seedDemoPassword), firstName: file.profile.firstName })
+      .values({ email: DEMO_EMAIL, passwordHash: await hashPassword(this.config.seedDemoPassword), role: 'USER', firstName: file.profile.firstName })
       .returning({ id: users.id });
     await this.transfer.importFile(user!.id, exportFileSchema.parse(file));
     this.logger.log(`Compte de démo créé : ${DEMO_EMAIL}`);

@@ -5,6 +5,7 @@ export function toProfileDto(u: typeof users.$inferSelect): UserProfileDto {
   return {
     id: u.id,
     email: u.email,
+    role: u.role,
     firstName: u.firstName,
     companyName: u.companyName,
     legalStatus: u.legalStatus,

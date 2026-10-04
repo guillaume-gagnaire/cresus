@@ -1,6 +1,6 @@
 import { BILLING_MODES, CHARGE_FREQUENCIES, CLIENT_COLORS, LEAVE_SCOPES, LEGAL_STATUSES, PAYMENT_TERM_KEYS } from '@matreso/engine';
 import { sql } from 'drizzle-orm';
-import { bigint, boolean, customType, date, index, integer, pgEnum, pgTable, smallint, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import { bigint, boolean, customType, date, index, integer, pgEnum, pgTable, smallint, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' });
 
@@ -9,6 +9,7 @@ export const paymentTermEnum = pgEnum('payment_term', PAYMENT_TERM_KEYS);
 export const billingModeEnum = pgEnum('billing_mode', BILLING_MODES);
 export const clientColorEnum = pgEnum('client_color', CLIENT_COLORS);
 export const leaveScopeEnum = pgEnum('leave_scope', LEAVE_SCOPES);
+export const userRoleEnum = pgEnum('user_role', ['ADMIN', 'USER']);
 export const chargeFrequencyEnum = pgEnum('charge_frequency', CHARGE_FREQUENCIES);
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
@@ -18,6 +19,7 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
+  role: userRoleEnum('role').notNull().default('USER'),
   firstName: text('first_name').notNull(),
   companyName: text('company_name'),
   legalStatus: legalStatusEnum('legal_status').notNull().default('SASU'),
@@ -29,7 +31,8 @@ export const users = pgTable('users', {
   alertRedMonth: boolean('alert_red_month').notNull().default(true),
   alertLatePayment: boolean('alert_late_payment').notNull().default(true),
   createdAt: createdAt(),
-});
+  // un seul ADMIN : le premier inscrit (cf. AuthService.register)
+}, (t) => [uniqueIndex('users_single_admin_uq').on(t.role).where(sql`${t.role} = 'ADMIN'`)]);
 
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(), // SHA-256 hex du jeton

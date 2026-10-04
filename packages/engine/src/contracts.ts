@@ -7,9 +7,13 @@ export interface ApiErrorBody {
   message: string;
 }
 
+/** Rôle d'un compte : le premier inscrit est ADMIN (un seul), les suivants USER. Jamais modifiable via l'API publique. */
+export type UserRole = 'ADMIN' | 'USER';
+
 export interface UserProfileDto extends Profile {
   id: string;
   email: string;
+  role: UserRole;
   companyName: string | null;
   alertRedMonth: boolean;
   alertLatePayment: boolean;
@@ -42,7 +46,7 @@ export interface StateDto {
   hasPasskey: boolean;
 }
 
-export type ProfilePatch = Partial<Omit<UserProfileDto, 'id' | 'email'>>;
+export type ProfilePatch = Partial<Omit<UserProfileDto, 'id' | 'email' | 'role'>>;
 
 export interface RateInput {
   validFrom: ISODate;
@@ -86,7 +90,7 @@ export interface ExportFileV1 {
   format: 'ma-treso';
   version: 1;
   exportedAt: string;
-  profile: Omit<UserProfileDto, 'id' | 'email'>;
+  profile: Omit<UserProfileDto, 'id' | 'email' | 'role'>;
   balanceSnapshots: Array<{ date: ISODate; amount: Cents }>;
   clients: Array<Omit<ClientInput, 'rate'> & { ref: string; archived: boolean; rates: RateInput[] }>;
   leaves: Array<{ date: ISODate; scope: LeaveScope; clientRef: string | null }>;

@@ -17,7 +17,7 @@ export class TransferService {
 
   async exportFile(userId: string): Promise<ExportFileV1> {
     const s = await this.state.getState(userId);
-    const { id: _id, email: _email, ...profile } = s.profile;
+    const { id: _id, email: _email, role: _role, ...profile } = s.profile;
     return {
       format: 'ma-treso',
       version: 1,
