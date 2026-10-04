@@ -47,4 +47,11 @@ describe('leaveKpis', () => {
   it('handles an empty horizon', () => {
     expect(leaveKpis(demoInput(), []).dayCount).toBe(0);
   });
+
+  it('finds lowest balance in a later month', () => {
+    const input = demoInput();
+    const results = monthResults(input);
+    const kpis = leaveKpis(input, results);
+    expect(kpis.lowestBalance).toBeLessThanOrEqual(Math.min(...results.map((r) => r.balance)));
+  });
 });

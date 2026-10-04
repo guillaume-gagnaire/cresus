@@ -76,6 +76,12 @@ describe('week template', () => {
     ]);
   });
 
+  it('shows null for weekdays with no assigned clients', () => {
+    const noOne = [{ ...a, weekdays: [0, 4] }, { ...b, weekdays: [1, 2, 3] }];
+    expect(weekTemplate(noOne, DEMO_TODAY)[0]?.clientId).toBe('client-a');
+    expect(weekTemplate([], DEMO_TODAY)[0]?.clientId).toBeNull();
+  });
+
   it('cycles A → B → free → A', () => {
     expect(cycleWeekday(clients, DEMO_TODAY, 0)).toEqual([
       { clientId: 'client-a', weekdays: [4] },
