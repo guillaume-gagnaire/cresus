@@ -2079,6 +2079,7 @@ Expected : FAIL.
 
 Porter `Mobile-Profil.dc.html` :
 - pastille d'initiales (« GD »), prénom en H1, e-mail ;
+- si `me.user.role === 'ADMIN'`, un badge « Administrateur » sous l'e-mail (Task 36) ;
 - **Mon compte** : société (champ texte qui appelle `updateProfile({ companyName })` au `change`), solde du compte (`MoneyInput` qui appelle `setBalance`) ;
 - **Sécurité** :
   - `ToggleSwitch` « Face ID » : vrai si `me.hasPasskey` ; l'activation appelle `enablePasskey()` (une erreur ou une annulation produit un toast « Impossible d’activer Face ID sur cet appareil. »), la désactivation appelle `disablePasskey()` ;
@@ -2361,3 +2362,21 @@ Expected : tout passe. Relire la table « Correspondance avec les critères d'ac
 git add README.md
 git commit -m "docs: README (démarrage, tests, déploiement Docker, architecture)"
 ```
+
+### Task 37: Déploiement sur Coolify (après la relecture finale, piloté par le contrôleur)
+
+Demande utilisateur ajoutée en cours d'exécution : déployer l'app sur l'instance Coolify de l'utilisateur, via le serveur MCP Coolify (à recharger en fin de session).
+
+- Projet Coolify : créer (ou réutiliser) un projet contenant :
+  - une base **PostgreSQL** (ressource Coolify, version 16) ;
+  - l'application **« Cresus »**, construite depuis le dépôt GitHub public `guillaume-gagnaire/cresus` (branche poussée en fin de développement), avec le build pack **Dockerfile** (le `Dockerfile` racine de la Task 34) et le port 3000 exposé.
+- Domaine : `https://cresus.gagnaire.dev`.
+- Variables d'environnement de l'application :
+  - `NODE_ENV=production`, `PORT=3000` ;
+  - `DATABASE_URL` = l'URL interne de la base PostgreSQL du même projet ;
+  - `SESSION_SECRET` = 48 octets aléatoires (base64url), générés au moment du déploiement et jamais commités ;
+  - `WEBAUTHN_RP_ID=cresus.gagnaire.dev`, `WEBAUTHN_ORIGIN=https://cresus.gagnaire.dev`, `WEBAUTHN_RP_NAME=Ma Tréso` ;
+  - `COOKIE_SECURE=true`, `SEED_DEMO=false`, `AUTH_RATE_LIMIT=10`.
+- Healthcheck Coolify sur `/api/health`.
+- Vérification : déploiement réussi, `https://cresus.gagnaire.dev/api/health` renvoie `{"status":"ok","db":"ok"}`, la page d'accueil répond 200 (repli SPA), et la première inscription crée bien un compte `ADMIN` (Task 36).
+- Le push de la branche sur GitHub et la création des ressources Coolify sont des actions externes demandées explicitement par l'utilisateur.

@@ -2619,3 +2619,93 @@ Expected : tous les tests PASS, build OK.
 git add packages/engine apps/api package-lock.json
 git commit -m "feat(api): export/import JSON, suppression du compte, compte de démo et service du front"
 ```
+
+### Task 36: Rôle administrateur pour le premier inscrit (exécutée juste après la Task 20)
+
+Demande utilisateur ajoutée en cours d'exécution : « la première fois qu'on s'inscrit sur l'app, c'est un compte admin qui est créé ». La v1 n'a pas de panneau d'administration (SPEC §1, hors périmètre) : le rôle est stocké, exposé dans le profil et affiché dans l'écran Profil (Task 32). Il n'ouvre aucune fonctionnalité supplémentaire pour l'instant.
+
+**Files:**
+- Modify : `apps/api/src/db/schema.ts` (enum `user_role` + colonne `users.role` + index unique partiel), nouvelle migration `apps/api/drizzle/0001_*.sql` (générée), `packages/engine/src/contracts.ts` (`UserRole`, `UserProfileDto.role`, `ExportFileV1.profile` sans `role`), `apps/api/src/data/mappers.ts` (`toProfileDto`), `apps/api/src/auth/auth.service.ts` (`register`), `apps/api/src/data/transfer.service.ts` (export sans `role`), `apps/api/src/seed/seed.service.ts` (démo en `USER`)
+- Create : `apps/api/test/admin.e2e.test.ts`
+
+**Interfaces:**
+- Produces : `type UserRole = 'ADMIN' | 'USER'` (engine), `UserProfileDto.role: UserRole`, donc `MeDto.user.role` et `StateDto.profile.role`.
+
+**Règles :**
+1. Le **premier compte inscrit via `POST /api/auth/register`** reçoit `role = 'ADMIN'`. Tous les suivants reçoivent `'USER'`. Le compte de démo (`SEED_DEMO`) est toujours `'USER'` et ne « consomme » pas le statut d'admin. La règle est donc : « admin si aucun ADMIN n'existe encore ».
+2. Il ne peut exister qu'un seul ADMIN, garanti par un index unique partiel : `CREATE UNIQUE INDEX users_single_admin_uq ON users (role) WHERE role = 'ADMIN'`. En Drizzle : `uniqueIndex('users_single_admin_uq').on(t.role).where(sql` + "`${t.role} = 'ADMIN'`" + `)`. Si deux premières inscriptions arrivent en même temps, la seconde viole cet index (23505 avec `constraint === 'users_single_admin_uq'`, sur l'erreur ou son `cause`) et l'insertion est rejouée avec `'USER'`. Une violation 23505 sur l'e-mail reste mappée en 409 `EMAIL_TAKEN`.
+3. Le rôle n'est **jamais** modifiable par l'API publique : `PATCH /api/profile` avec `role` renvoie 400 (le schéma est déjà `.strict()`). L'import ignore tout `role` présent dans le fichier (le schéma de `profile` en retire les clés inconnues), et l'export n'inclut pas `role`.
+
+- [ ] **Step 1: Écrire le test e2e**
+
+`apps/api/test/admin.e2e.test.ts` :
+```ts
+import { demoExportFile } from '@matreso/engine';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { SeedService } from '../src/seed/seed.service.js';
+import { agentFor, resetDb, setupTestApp } from './helpers.js';
+
+const register = (app: NestExpressApplication, email: string) =>
+  agentFor(app).post('/api/auth/register').send({ email, password: 'motdepasse1', firstName: 'X' });
+
+describe('first registered user is admin', () => {
+  let app: NestExpressApplication;
+  beforeAll(async () => { app = await setupTestApp(); });
+  beforeEach(async () => { await resetDb(app); });
+  afterAll(async () => { await app.close(); });
+
+  it('makes the first account ADMIN and the next ones USER', async () => {
+    const first = await register(app, 'first@example.com').expect(201);
+    expect(first.body.user.role).toBe('ADMIN');
+    const second = await register(app, 'second@example.com').expect(201);
+    expect(second.body.user.role).toBe('USER');
+  });
+
+  it('does not count the demo account', async () => {
+    await app.get(SeedService).ensureDemoUser();
+    const first = await register(app, 'first@example.com').expect(201);
+    expect(first.body.user.role).toBe('ADMIN');
+    const demo = await agentFor(app).post('/api/auth/login').send({ email: 'demo@matreso.fr', password: 'demo1234' }).expect(200);
+    expect(demo.body.user.role).toBe('USER');
+  });
+
+  it('keeps a single admin under concurrent first registrations', async () => {
+    const [a, b] = await Promise.all([register(app, 'a@example.com'), register(app, 'b@example.com')]);
+    expect([a.status, b.status]).toEqual([201, 201]);
+    expect([a.body.user.role, b.body.user.role].sort()).toEqual(['ADMIN', 'USER']);
+  });
+
+  it('never lets a user change their role (profile patch, import) and never exports it', async () => {
+    await register(app, 'first@example.com').expect(201);
+    const user = agentFor(app);
+    await user.post('/api/auth/register').send({ email: 'user@example.com', password: 'motdepasse1', firstName: 'Y' }).expect(201);
+    await user.patch('/api/profile').send({ role: 'ADMIN' }).expect(400);
+    const file = { ...demoExportFile(), profile: { ...demoExportFile().profile, role: 'ADMIN' } };
+    const imported = await user.post('/api/import').send(file).expect(201);
+    expect(imported.body.profile.role).toBe('USER');
+    const exported = await user.get('/api/export').expect(200);
+    expect(exported.body.profile).not.toHaveProperty('role');
+  });
+});
+```
+
+- [ ] **Step 2: Vérifier l'échec**
+
+Run : `npm run test -w @matreso/api -- admin`
+Expected : FAIL (`role` undefined).
+
+- [ ] **Step 3: Implémenter**
+
+- `contracts.ts` : `export type UserRole = 'ADMIN' | 'USER';`, ajouter `role: UserRole` à `UserProfileDto`, changer `ExportFileV1.profile` en `Omit<UserProfileDto, 'id' | 'email' | 'role'>`. `demoExportFile` ne doit pas contenir `role`.
+- `schema.ts` : `export const userRoleEnum = pgEnum('user_role', ['ADMIN', 'USER']);`, `role: userRoleEnum('role').notNull().default('USER')` sur `users`, et l'index unique partiel dans le troisième argument de `pgTable`. Puis `npm run build -w @matreso/engine && npm run db:generate -w @matreso/api`, qui génère `0001_*.sql` (vérifier que l'index contient `WHERE "users"."role" = 'ADMIN'` ou équivalent).
+- `mappers.ts` : `toProfileDto` renvoie `role: u.role`.
+- `auth.service.ts` (`register`) : chercher s'il existe déjà un ADMIN (`select id from users where role = 'ADMIN' limit 1`), insérer avec `'ADMIN'` sinon `'USER'`. Si l'insertion échoue en 23505 avec la contrainte `users_single_admin_uq` (lue sur l'erreur ou son `cause` : propriété `constraint`), rejouer l'insertion avec `'USER'`. Une autre 23505 donne 409 `EMAIL_TAKEN`. Garder le hachage et le pré-contrôle e-mail existants.
+- `transfer.service.ts` : retirer aussi `role` du profil exporté (`const { id: _id, email: _email, role: _role, ...profile } = s.profile;`).
+- `seed.service.ts` : insérer la démo avec `role: 'USER'` explicitement.
+
+- [ ] **Step 4: Vérifier, puis commit**
+
+Run : `npm run test -w @matreso/api && npm run typecheck -w @matreso/api && npm run test -w @matreso/engine`
+Expected : tout PASS.
+Commit : `feat(api): le premier compte inscrit est administrateur`.
