@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { euros } from '@matreso/engine';
+import {
+  billedVsCashed, ceilingGauge, demoInput, euros, kEuros, longDate, microMonths, missionTimeline, monthLabel, monthLetter,
+  monthResults, monthShort, shortDate, smoothedIncome, type MonthKey,
+} from '@matreso/engine';
 
 // Page de démonstration du kit UI : n’existe qu’en développement (et sert de support aux tests e2e).
 definePageMeta({ middleware: [() => { if (!import.meta.dev) return navigateTo('/'); }] });
@@ -35,6 +38,112 @@ function closeDialog(result: string): void {
   dialogResult.value = result;
   dialogOpen.value = null;
 }
+
+// --- Graphiques : jeux de démo tirés du moteur (demoInput) et des fonctions de format ---
+const demo = demoInput();
+const results = monthResults(demo);
+const micro = microMonths(demo);
+/** « oct. 26 » pour le premier mois et chaque janvier, « nov. » sinon (libellés des maquettes). */
+const monthTag = (month: MonthKey, i: number): string => monthShort(month) + (i === 0 || month.endsWith('-01') ? ` ${month.slice(2, 4)}` : '');
+
+const chartMonth = ref(1);
+const resultBars = computed(() =>
+  results.map((r, i) => ({
+    key: r.month,
+    label: monthTag(r.month, i),
+    valueLabel: kEuros(r.result),
+    value: r.result,
+    aria: `${monthLabel(r.month)} : ${euros(r.result, { sign: true })}`,
+    selected: i === chartMonth.value,
+  })),
+);
+const miniBars = computed(() => resultBars.value.map((b, i) => ({ ...b, label: monthLetter(results[i]!.month) })));
+const litMonths = results.filter((r) => r.state === 'RED_DUE_TO_LEAVES').map((r) => r.month);
+
+const withProspects = ref(false);
+const selectedMission = ref('client-a');
+const timeline = computed(() => missionTimeline(demo, { includeProspects: withProspects.value }));
+const timelineRows = computed(() =>
+  timeline.value.bars.map((bar) => {
+    const c = demo.clients.find((x) => x.id === bar.clientId)!;
+    return {
+      id: c.id,
+      name: c.name,
+      sub: c.isProspect ? 'Piste' : c.billingMode === 'FORFAIT' ? `Forfait · ${c.subtitle ?? ''}` : (c.subtitle ?? ''),
+      leftPct: bar.leftPct,
+      widthPct: bar.widthPct,
+      openEnd: bar.openEnd,
+      prospect: c.isProspect,
+      dimmed: c.isProspect && !withProspects.value,
+      selected: c.id === selectedMission.value,
+      color: PALETTE[c.color],
+      label: `${shortDate(c.startDate)} → ${c.endDate ? shortDate(c.endDate) : '…'}`,
+      aria: `Ouvrir ${c.name} : Du ${longDate(c.startDate)}${c.endDate ? ` au ${longDate(c.endDate)}` : ', sans fin'}`,
+    };
+  }),
+);
+const timelineGaps = computed(() =>
+  timeline.value.months.map((m, i) => ({ label: `${monthShort(m)} : ${euros(timeline.value.billed[i]!)} facturés`, low: timeline.value.lowMonths.includes(m) })),
+);
+const timelineMessage = computed(() => {
+  const low = timeline.value.lowMonths;
+  return low.length
+    ? { text: `Creux repéré : ${low.map(monthLabel).join(', ')}.`, tone: 'warn' as const }
+    : { text: 'Aucun creux sur 12 mois : tes jours sont remplis.', tone: 'ok' as const };
+});
+
+const gauge = ceilingGauge(demo, 2026);
+const gaugeScale = Math.max(gauge.ceiling * 1.1, gauge.total);
+const gaugeTone = { OK: { color: '#2E9E6A', soft: '#CDEBD8' }, WARN: { color: '#E0A800', soft: '#FFF1B8' }, OVER: { color: '#E5484D', soft: '#FBD2CE' } }[gauge.level];
+const gaugePct = { actual: (gauge.actual / gaugeScale) * 100, planned: (gauge.planned / gaugeScale) * 100, vat: (gauge.vatThreshold / gaugeScale) * 100 };
+const gaugeLabel = `Plafond de chiffre d’affaires ${gauge.year} : ${euros(gauge.total)} sur ${euros(gauge.ceiling)} autorisés (${gauge.pct} %), seuil de TVA à ${euros(gauge.vatThreshold)}`;
+
+const cash = billedVsCashed(demo);
+const stackedColumns = (label: (m: MonthKey) => string) =>
+  cash.map((m) => ({
+    label: label(m.month),
+    totalLabel: m.cashedTotal ? kEuros(m.cashedTotal, { sign: false }) : '0',
+    segments: [...demo.clients]
+      .reverse()
+      .filter((c) => m.cashed[c.id])
+      .map((c) => ({ value: m.cashed[c.id]!, color: PALETTE[c.color].base, faded: c.isProspect })),
+  }));
+const stackedFull = stackedColumns(monthShort);
+const stackedMini = stackedColumns(monthLetter);
+const stackedAria = cash.map((m) => `${monthLabel(m.month)} : ${euros(m.cashedTotal)} encaissés`);
+
+const leaveColumns = results.map((r, i) => ({
+  label: monthTag(r.month, i),
+  without: r.resultWithoutLeaves,
+  with: r.result,
+  highlight: r.state === 'RED_DUE_TO_LEAVES',
+  aria: `${monthLabel(r.month)} : ${euros(r.resultWithoutLeaves, { sign: true })} sans vacances, ${euros(r.result, { sign: true })} avec vacances`,
+  valueLabel: kEuros(r.result),
+}));
+
+const split = micro[1]!.breakdown;
+const splitSegments = [
+  { label: 'Cotisations', value: split.contributions, color: '#FF8A3D', display: euros(split.contributions) },
+  { label: 'Impôt', value: split.tax, color: '#9B6BFF', display: euros(split.tax) },
+  { label: 'Frais pro', value: split.proExpenses, color: '#B9B2CC', display: euros(split.proExpenses) },
+  { label: 'Pour toi', value: Math.max(0, split.forYou), color: '#2E9E6A', display: euros(split.forYou) },
+];
+const splitTotal = Math.max(split.income, split.proExpenses);
+
+const smoothedMonth = ref(1);
+const smoothing = smoothedIncome(micro);
+const smoothedBars = (label: (m: MonthKey, i: number) => string) =>
+  micro.map((m, i) => ({
+    key: m.month,
+    label: label(m.month, i),
+    value: m.breakdown.forYou,
+    low: smoothing.lowMonths.includes(m.month),
+    aria: `${monthLabel(m.month)} : ${euros(m.breakdown.forYou)} pour toi`,
+    selected: i === smoothedMonth.value,
+  }));
+const smoothedFull = computed(() => smoothedBars(monthTag));
+const smoothedMini = computed(() => smoothedBars((m) => monthLetter(m)));
+const smoothedAverage = `Moyenne lissée : ${euros(smoothing.average)} par mois`;
 </script>
 
 <template>
@@ -142,6 +251,76 @@ function closeDialog(result: string): void {
         <AppButton @click="dialogOpen = 'password'">Ouvrir avec mot de passe</AppButton>
       </div>
       <p class="sm">Résultat : <output data-testid="dialog-result">{{ dialogResult }}</output></p>
+    </section>
+
+    <section class="card block" data-testid="chart-bars">
+      <h2>Barres du mois</h2>
+      <p class="sm">Mois sélectionné : <output data-testid="chart-selected">{{ monthLabel(results[chartMonth]!.month) }}</output></p>
+      <ResultBars ariaLabel="Démo barres" :bars="resultBars" @select="chartMonth = $event" />
+      <MiniBars ariaLabel="Démo compacte des barres" :bars="miniBars" :highlight="litMonths" @select="chartMonth = $event" />
+      <MiniBars readonly ariaLabel="Démo compacte des barres en lecture seule" :bars="miniBars" :highlight="litMonths" />
+    </section>
+
+    <section class="card block" data-testid="chart-timeline">
+      <h2>Frise des missions</h2>
+      <ToggleSwitch v-model="withProspects" label="Démo compter les pistes" />
+      <p class="sm">Mission ouverte : <output data-testid="chart-selected-mission">{{ selectedMission }}</output></p>
+      <MissionTimeline
+        ariaLabel="Démo frise"
+        :months="timeline.months.map(monthShort)"
+        :rows="timelineRows"
+        :gaps="timelineGaps"
+        :gap-message="timelineMessage"
+        @select="selectedMission = $event"
+      />
+    </section>
+
+    <section class="card block" data-testid="chart-gauge">
+      <h2>Jauge du plafond</h2>
+      <CeilingGauge
+        :actual-pct="gaugePct.actual"
+        :planned-pct="gaugePct.planned"
+        :vat-pct="gaugePct.vat"
+        :color="gaugeTone.color"
+        :soft="gaugeTone.soft"
+        :ariaLabel="gaugeLabel"
+      />
+    </section>
+
+    <section class="card block" data-testid="chart-gauge-compact">
+      <h2>Jauge compacte</h2>
+      <CeilingGauge
+        compact
+        :actual-pct="gaugePct.actual"
+        :planned-pct="gaugePct.planned"
+        :vat-pct="gaugePct.vat"
+        :color="gaugeTone.color"
+        :soft="gaugeTone.soft"
+        :ariaLabel="`Jauge compacte : ${gauge.pct} % du CA autorisé`"
+      />
+    </section>
+
+    <section class="card block" data-testid="chart-stacked">
+      <h2>Encaissements empilés</h2>
+      <StackedCashBars ariaLabel="Démo encaissements" :columns="stackedFull" :ariaLabels="stackedAria" />
+      <StackedCashBars compact ariaLabel="Démo compacte des encaissements" :columns="stackedMini" :ariaLabels="stackedAria" />
+    </section>
+
+    <section class="card block" data-testid="chart-leave">
+      <h2>Effet des congés</h2>
+      <LeaveImpactBars ariaLabel="Démo congés" :columns="leaveColumns" />
+    </section>
+
+    <section class="card block" data-testid="chart-split">
+      <h2>Répartition du mois</h2>
+      <SplitBar ariaLabel="Démo répartition du mois" :segments="splitSegments" :total="splitTotal" />
+      <SplitBar compact ariaLabel="Démo compacte de la répartition" :segments="splitSegments" :total="splitTotal" />
+    </section>
+
+    <section class="card block" data-testid="chart-smoothed">
+      <h2>Revenu lissé</h2>
+      <SmoothedBars ariaLabel="Démo lissage" :bars="smoothedFull" :average="smoothing.average" :average-label="smoothedAverage" @select="smoothedMonth = $event" />
+      <SmoothedBars compact ariaLabel="Démo compacte du lissage" :bars="smoothedMini" :average="smoothing.average" :average-label="smoothedAverage" @select="smoothedMonth = $event" />
     </section>
 
     <ConfirmDialog

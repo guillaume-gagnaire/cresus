@@ -32,7 +32,10 @@ test('targets are at least 44 px', async ({ page }) => {
   for (const el of await page.locator('button:visible, [role="switch"]:visible').all()) {
     const box = await el.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
-    expect(box!.width).toBeGreaterThanOrEqual(44);
+    // Colonnes des graphiques : 15 colonnes en 350 px (version compacte) ou dans une carte étroite ne peuvent pas faire
+    // 44 px de large ; la largeur des colonnes du graphique large est vérifiée dans charts.spec.ts.
+    const chartColumn = await el.evaluate((node) => node.getAttribute('role') !== 'switch' && node.closest('[data-testid^="chart-"]') !== null);
+    if (!chartColumn) expect(box!.width).toBeGreaterThanOrEqual(44);
   }
 });
 
