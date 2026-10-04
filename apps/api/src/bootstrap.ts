@@ -11,12 +11,15 @@ import { type AppConfig, loadConfig } from './config.js';
 export async function createApp(config: AppConfig = loadConfig()): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule.register(config), {
     logger: config.nodeEnv === 'test' ? false : ['log', 'warn', 'error'],
+    // une erreur au démarrage (migration, base injoignable…) est propagée à l'appelant au lieu de tuer le processus
+    abortOnError: false,
   });
   app.set('trust proxy', 1);
   app.setGlobalPrefix('api');
   app.use(cookieParser(config.sessionSecret));
   app.use(jsonOnlyMutations);
-  app.useGlobalFilters(new AppErrorFilter());
+  // en test le logger Nest est désactivé : le filtre journalise alors les erreurs inattendues sur la console
+  app.useGlobalFilters(new AppErrorFilter(config.nodeEnv === 'test'));
   app.enableShutdownHooks();
   return app;
 }

@@ -10,7 +10,7 @@ export class ZodPipe<T> implements PipeTransform<unknown, T> {
     const result = this.schema.safeParse(value);
     if (result.success) return result.data;
     const issue = result.error.issues[0];
-    const custom = issue?.message && !/^(Invalid|Expected|Required|Too )/i.test(issue.message);
+    const custom = issue?.message && !/^(Invalid|Expected|Required|Too |Unrecognized)/i.test(issue.message);
     throw new AppError(400, 'VALIDATION', custom ? issue.message : 'Données invalides.');
   }
 }

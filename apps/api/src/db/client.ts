@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
+import { Logger } from '@nestjs/common';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
@@ -33,5 +34,8 @@ export async function openDb(url: string): Promise<DbHandle> {
     return { db: drizzlePglite({ client, schema }) as unknown as Db, target, close: () => client.close() };
   }
   const pool = new pg.Pool({ connectionString: target.url, max: 10 });
+  // une erreur sur un client inactif (coupure réseau, redémarrage de PostgreSQL) ne doit pas faire tomber le processus
+  const logger = new Logger('Db');
+  pool.on('error', (err) => logger.error(`Erreur sur un client PostgreSQL inactif : ${err.message}`, err.stack));
   return { db: drizzlePg({ client: pool, schema }) as unknown as Db, target, close: () => pool.end() };
 }

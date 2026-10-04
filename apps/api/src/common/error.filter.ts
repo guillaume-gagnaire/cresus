@@ -6,6 +6,9 @@ import { AppError } from './app-error.js';
 export class AppErrorFilter implements ExceptionFilter {
   private readonly logger = new Logger('Errors');
 
+  /** `logToConsole` : écrit aussi sur la console, car le logger Nest est désactivé en test (sinon une 500 resterait muette). */
+  constructor(private readonly logToConsole = false) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const res = host.switchToHttp().getResponse<Response>();
     if (exception instanceof AppError) {
@@ -19,7 +22,9 @@ export class AppErrorFilter implements ExceptionFilter {
       res.status(status).json({ statusCode: status, code, message });
       return;
     }
-    this.logger.error(exception instanceof Error ? exception.stack : String(exception));
+    const detail = exception instanceof Error ? (exception.stack ?? exception.message) : String(exception);
+    if (this.logToConsole) console.error(`[Errors] ${detail}`);
+    else this.logger.error(detail);
     res.status(500).json({ statusCode: 500, code: 'INTERNAL', message: 'Une erreur est survenue. Réessaie dans un instant.' });
   }
 }
