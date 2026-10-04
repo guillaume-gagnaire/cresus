@@ -40,6 +40,13 @@ describe('projectIncome', () => {
     expect(entries.map((e) => e.clientId)).toEqual(['x']);
   });
 
+  it('sorts entries by cash date across clients, regardless of client order', () => {
+    const late = makeClient({ id: 'late', paymentTerm: 'RECEPTION', startDate: '2026-11-01' }); // Nov work → cash 2026-11-30
+    const early = makeClient({ id: 'early', paymentTerm: 'NET_45' }); // Sep work → 2026-09-30 + 45 = 2026-11-14
+    const entries = projectIncome([late, early], [], { firstMonth: '2026-11', months: 1, includeProspects: false });
+    expect(entries.map((e) => [e.clientId, e.cashDate])).toEqual([['early', '2026-11-14'], ['late', '2026-11-30']]);
+  });
+
   it('skips months without any amount and sorts by cash date', () => {
     const a = makeClient({ id: 'a', paymentTerm: 'NET_30' });
     const b = makeClient({ id: 'b', paymentTerm: 'RECEPTION', startDate: '2026-11-01' });
@@ -54,10 +61,12 @@ describe('projectIncome', () => {
     expect(entries.filter((e) => e.clientId === 'future')).toEqual([]);
   });
 
-  it('filters work months that start after client end date', () => {
-    const ended = makeClient({ id: 'ended', endDate: '2026-10-31' });
+  it('client with endDate still produces invoices from work months before end', () => {
+    const ended = makeClient({ paymentTerm: 'NET_30', endDate: '2026-10-31' });
     const entries = projectIncome([ended], [], { firstMonth: '2026-11', months: 1, includeProspects: false });
-    expect(entries.filter((e) => e.clientId === 'ended')).toEqual([]);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.workMonth).toBe('2026-10');
+    expect(entries[0]?.cashDate).toBe('2026-11-30');
   });
 
   it('skips months with zero billable amount', () => {
