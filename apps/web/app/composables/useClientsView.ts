@@ -1,7 +1,7 @@
 import {
-  addMonths, billedVsCashed, type BillingMode, type Cents, type Client, type ClientColor, currentRate, daysInMonth, estimatedMonthly, euros,
-  eurosExact, firstInvoicePath, type ISODate, kEuros, missionTimeline, monthKey, monthLabel, monthName, monthShort, nextRate,
-  PAYMENT_TERMS, plural, type PaymentTerm, rateHistory, type RateStatus, shortDate,
+  addMonths, billedVsCashed, type BillingMode, type Cents, type Client, type ClientColor, currentRate, daysInMonth, estimatedDaysPerMonth,
+  estimatedMonthly, euros, eurosExact, firstInvoicePath, type ISODate, kEuros, longDate, missionTimeline, monthKey, monthLabel, monthLetter,
+  monthName, monthShort, nextRate, PAYMENT_TERMS, plural, type PaymentTerm, rateHistory, type RateStatus, shortDate, weekTemplate,
 } from '@matreso/engine';
 import type { Ref } from 'vue';
 
@@ -9,10 +9,14 @@ import type { Ref } from 'vue';
 export interface MissionRow {
   id: string;
   name: string;
+  /** Sous-titre ; chaîne vide quand il n’y en a pas. */
+  subtitle: string;
   color: { base: string; fg: string; soft: string };
   prospect: boolean;
   selected: boolean;
   days: string;
+  /** « 8 » et « jours / mois », ou « Forfait » sans unité (fiches de l’écran mobile). */
+  daysPerMonth: { value: string; unit: string };
   period: string;
   rate: string;
   rateSub: string;
@@ -50,6 +54,10 @@ export interface MissionPanelView {
   color: { base: string; fg: string; soft: string };
   isProspect: boolean;
   badge: string;
+  /** Estimation du mois courant, préfixée d’un « + » pour une piste (comme dans le tableau). */
+  monthly: string;
+  /** « Du 1er octobre 2026 au 31 mai 2027 », ou « …, sans fin ». */
+  period: string;
   billingMode: BillingMode;
   modeHelp: string;
   rateTitle: string;
@@ -62,6 +70,23 @@ export interface MissionPanelView {
   paymentTerm: PaymentTerm;
   averageDelayDays: number;
   path: { steps: [PathStep, PathStep, PathStep]; wait: string };
+}
+
+/** Une case de la semaine type (Mobile-Missions.dc.html l. 60 à 62) : « Lun » + la lettre du client, ou « Libre ». */
+export interface WeekDayView {
+  weekday: number;
+  short: string;
+  label: string;
+  aria: string;
+  /** `null` : jour libre. */
+  color: { base: string; fg: string } | null;
+}
+
+/** Encaissements d’une mission sur 12 mois (Mobile-Client.dc.html l. 92 à 98), au format de `MiniBars`. */
+export interface ClientCashView {
+  total: string;
+  note: string;
+  bars: { key: string; label: string; valueLabel: string; value: number; aria: string; selected: boolean }[];
 }
 
 export interface CashBars {
@@ -87,6 +112,12 @@ export function suggestedEnd(start: ISODate): ISODate {
   return `${month}-${String(day).padStart(2, '0')}`;
 }
 
+const monthlyText = (c: Client, today: ISODate): string => `${c.isProspect ? '+' : ''}${euros(estimatedMonthly(c, today))}`;
+function daysPerMonth(c: Client): MissionRow['daysPerMonth'] {
+  if (c.billingMode === 'FORFAIT') return { value: 'Forfait', unit: '' };
+  const days = estimatedDaysPerMonth(c);
+  return { value: String(days), unit: `${days > 1 ? 'jours' : 'jour'} / mois` };
+}
 const period = (c: Client): string => `Du ${shortDate(c.startDate)}${c.endDate ? ` au ${shortDate(c.endDate)}` : ', sans fin'}`;
 const daysLabel = (c: Client): string =>
   c.billingMode === 'FORFAIT' ? 'Forfait mensuel' : c.weekdays.length ? c.weekdays.map((d) => WEEKDAY_SHORT[d] ?? '').join(', ') : 'aucun jour';
@@ -164,10 +195,12 @@ export function useClientsView(selectedId: Ref<string | null>) {
       return {
         id: c.id,
         name: c.name,
+        subtitle: c.subtitle ?? '',
         color: PALETTE[c.color],
         prospect: c.isProspect,
         selected: c.id === selectedId.value,
         days: daysLabel(c),
+        daysPerMonth: daysPerMonth(c),
         period: period(c),
         rate: now ? rateText(now.amount, c.billingMode) : '—',
         rateSub: next
@@ -175,7 +208,7 @@ export function useClientsView(selectedId: Ref<string | null>) {
           : c.rates.length > 1 ? `${c.rates.length} tarifs dans l’historique` : '',
         term: PAYMENT_TERMS[c.paymentTerm].label,
         delay: c.averageDelayDays ? `+ ${c.averageDelayDays} j de retard en moyenne` : 'paie à l’heure',
-        monthly: `${c.isProspect ? '+' : ''}${euros(estimatedMonthly(c, treso.today))}`,
+        monthly: monthlyText(c, treso.today),
       };
     }),
   );
@@ -194,6 +227,8 @@ export function useClientsView(selectedId: Ref<string | null>) {
       color: PALETTE[c.color],
       isProspect: c.isProspect,
       badge: statusLabel(c, today),
+      monthly: monthlyText(c, today),
+      period: `Du ${longDate(c.startDate)}${c.endDate ? ` au ${longDate(c.endDate)}` : ', sans fin'}`,
       billingMode: c.billingMode,
       modeHelp: MODE_HELP[c.billingMode],
       rateTitle: c.billingMode === 'FORFAIT' ? 'Montant mensuel actuel' : 'TJM actuel',
@@ -252,5 +287,49 @@ export function useClientsView(selectedId: Ref<string | null>) {
     cashed: `${euros(cash.value.reduce((sum, m) => sum + m.cashedTotal, 0))} encaissés`,
   }));
 
-  return { timeline, rows, selected, panel, cashBars, totals, kicker };
+  /** Semaine type du mobile : une case par jour ouvré, avec le client qui y travaille (moteur `weekTemplate`). */
+  const week = computed<WeekDayView[]>(() =>
+    weekTemplate(treso.clients, treso.today).map(({ weekday, clientId }) => {
+      const c = treso.clientById(clientId);
+      const long = WEEKDAY_LONG[weekday] ?? '';
+      return {
+        weekday,
+        short: WEEKDAY_SHORT[weekday] ?? '',
+        label: c ? clientLetter(c.name) : 'Libre',
+        aria: `${long} : ${c ? c.name : 'libre'}, toucher pour changer`,
+        color: c ? { base: PALETTE[c.color].base, fg: PALETTE[c.color].fg } : null,
+      };
+    }),
+  );
+
+  /** « CA moyen par mois » : somme des estimations mensuelles des missions signées (les pistes n’y comptent pas). */
+  const averageMonthly = computed(() =>
+    euros(treso.clients.filter((c) => !c.isProspect).reduce((sum, c) => sum + estimatedMonthly(c, treso.today), 0)),
+  );
+
+  /** Ce que la mission choisie encaisse, mois par mois, pistes comprises (on regarde justement cette mission). */
+  const clientCash = computed<ClientCashView | null>(() => {
+    const c = selected.value;
+    const input = treso.input;
+    if (!c || !input) return null;
+    const months = billedVsCashed(input, { includeProspects: true });
+    const values = months.map((m) => m.cashed[c.id] ?? 0);
+    const first = months[0];
+    const last = months[months.length - 1];
+    const from = first ? monthLabel(first.month) : '';
+    return {
+      total: euros(values.reduce((sum, v) => sum + v, 0)),
+      note: first && last ? `${from.charAt(0).toUpperCase()}${from.slice(1)} → ${monthLabel(last.month)}, une fois le délai de paiement passé.` : '',
+      bars: months.map((m, i) => ({
+        key: m.month,
+        label: monthLetter(m.month),
+        valueLabel: kEuros(values[i] ?? 0, { sign: false }),
+        value: values[i] ?? 0,
+        aria: `${monthLabel(m.month)} : ${euros(values[i] ?? 0)} encaissés`,
+        selected: false,
+      })),
+    };
+  });
+
+  return { timeline, rows, selected, panel, cashBars, totals, kicker, week, averageMonthly, clientCash };
 }
