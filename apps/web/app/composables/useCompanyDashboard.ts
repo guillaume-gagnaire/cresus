@@ -17,19 +17,26 @@ export function useCompanyDashboard() {
     const r = current.value;
     if (!r) return null;
     const positive = r.result >= 0;
-    const safe = r.balance >= 0;
-    let sentence = positive
-      ? 'Tes rentrées couvrent toutes tes charges, et il te reste ce montant en plus.'
-      : safe
-        ? `Il manque ce montant pour couvrir tes charges, mais ton solde absorbe le choc : il reste ${euros(r.balance)} sur le compte.`
-        : 'Et ton solde ne suffit pas : le compte passe à découvert.';
+    const overdrawn = r.balance < 0;
+    // Le titre et la phrase suivent l’état du mois (donc la couleur de la carte) : un mois positif mais encore à découvert n’est pas « dans le positif ».
+    const title = overdrawn && positive ? 'Ton compte est à découvert' : positive ? 'Tu es dans le positif' : 'Tu es dans le rouge ce mois-ci';
+    let sentence: string;
+    if (overdrawn) {
+      sentence = positive
+        ? 'Tes rentrées couvrent tes charges ce mois-ci, mais le compte reste à découvert après les mois précédents.'
+        : 'Ton solde ne suffit pas : le compte passe à découvert.';
+    } else if (positive) {
+      sentence = 'Tes rentrées couvrent toutes tes charges, et il te reste ce montant en plus.';
+    } else {
+      sentence = `Il manque ce montant pour couvrir tes charges, mais ton solde absorbe le choc : il reste ${euros(r.balance)} sur le compte.`;
+    }
     if (r.state === 'RED_DUE_TO_LEAVES') sentence += ' Sans tes vacances, ce mois serait dans le positif.';
     return {
       month: r.month,
       monthLabel: monthLabel(r.month),
       state: r.state,
       style: STATE_STYLE[r.state],
-      title: positive ? 'Tu es dans le positif' : 'Tu es dans le rouge ce mois-ci',
+      title,
       result: euros(r.result, { sign: true }),
       sentence,
       // Le signe est dans la chaîne (et non ajouté par le gabarit) : un mois sans rentrée ni charge affiche « 0 € », jamais « +0 € » ou « −0 € ».

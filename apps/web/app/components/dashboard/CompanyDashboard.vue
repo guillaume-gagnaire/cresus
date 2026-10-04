@@ -41,7 +41,7 @@ const SUMMARY_TONES = {
       </div>
       <ResultBars :bars="bars" @select="select" />
       <TipBubble title="Pourquoi certains mois sont dans le rouge&#160;?">
-        Tes clients ne paient pas le mois où tu travailles : le Client A paie à 30 jours fin de mois, le Client B à 45 jours avec ~10 jours de retard. Un mois peut donc être dans le rouge alors que tu as bien travaillé. Ton solde sert d’amortisseur. Tes vacances posées sont déjà déduites.
+        Tes clients ne paient pas le mois où tu travailles : entre ta facture et le virement, il s’écoule souvent 30 à 45 jours, parfois plus. Un mois peut donc être dans le rouge alors que tu as bien travaillé : ton solde sert d’amortisseur. Tes vacances posées sont déjà déduites.
       </TipBubble>
     </section>
   </div>

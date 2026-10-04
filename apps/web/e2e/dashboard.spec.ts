@@ -94,3 +94,34 @@ test('asks for the balance on a brand new account', async ({ page }) => {
   await expect(page.getByText('Indique ton solde pour démarrer')).toBeVisible();
   await expect(page.getByLabel('Solde du compte')).toHaveValue('');
 });
+
+// Correction R28 : le verdict ne contredit jamais sa carte (mois positif mais encore à découvert).
+
+test('words an overdrawn month by its state, positive or not', async ({ page }) => {
+  await freshAccount(page);
+  const field = page.getByLabel('Solde du compte');
+  await field.fill('-5000');
+  await field.blur();
+  // Octobre : −2 310 € sur −5 000 € → le compte passe à découvert.
+  await expect(page.getByText('Tu es dans le rouge ce mois-ci')).toBeVisible();
+  await expect(page.getByText('Ton solde ne suffit pas : le compte passe à découvert.')).toBeVisible();
+  await expect(page.getByText('Et ton solde ne suffit pas')).toHaveCount(0);
+  // Novembre : +5 340 € de résultat, mais −1 980 € sur le compte → positif et pourtant à découvert.
+  await page.getByRole('button', { name: 'Mois suivant' }).click();
+  await expect(page.getByText('novembre 2026').first()).toBeVisible();
+  await expect(page.getByText('Ton compte est à découvert')).toBeVisible();
+  await expect(page.getByText('Tes rentrées couvrent tes charges ce mois-ci, mais le compte reste à découvert après les mois précédents.')).toBeVisible();
+  await expect(page.getByText('Tu es dans le positif')).toHaveCount(0);
+  await expect(page.getByText(fr('+5 340 €')).first()).toBeVisible();
+  await expect(page.getByText(fr('−1 980 €')).first()).toBeVisible();
+});
+
+test('explains the late payments without naming any client', async ({ page, isMobile }) => {
+  await freshAccount(page);
+  const tip = page.getByText('Tes clients ne paient pas le mois où tu travailles');
+  if (isMobile) await expect(page.getByText('Tes clients paient avec un décalage')).toBeVisible();
+  else {
+    await expect(tip).toBeVisible();
+    await expect(tip).not.toContainText(/Client [A-D]/);
+  }
+});
