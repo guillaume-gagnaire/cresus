@@ -9,6 +9,8 @@ export default defineNuxtConfig({
   alias: {
     '@matreso/engine': fileURLToPath(new URL('../../packages/engine/src/index.ts', import.meta.url)),
   },
+  // Les tests e2e pilotent le store via `window.__treso` (toujours exposé en dev, sur demande en build).
+  runtimeConfig: { public: { e2e: process.env.NUXT_PUBLIC_E2E === 'true' } },
   css: [
     '@fontsource-variable/bricolage-grotesque',
     '@fontsource-variable/figtree',

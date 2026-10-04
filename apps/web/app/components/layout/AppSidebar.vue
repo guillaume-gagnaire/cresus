@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { euros, shortDate, yearOf, type Cents, type ISODate } from '@matreso/engine';
+import { euros, shortDate, yearOf } from '@matreso/engine';
 
 const auth = useAuthStore();
 const route = useRoute();
@@ -18,8 +18,8 @@ const companyName = computed(() => auth.me?.user.companyName ?? null);
 const badge = computed(() => initials(companyName.value, name.value));
 const subtitle = computed(() => companyName.value?.trim() || name.value);
 
-// Task 24 : lira le dernier solde du store de projection (montant et date).
-const latest = computed<{ amount: Cents; date: ISODate } | null>(() => null);
+const treso = useTresoStore();
+const latest = computed(() => treso.balance);
 </script>
 
 <template>

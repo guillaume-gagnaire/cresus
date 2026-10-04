@@ -1,0 +1,98 @@
+import { euros } from '@matreso/engine';
+import { expect, test, type Page } from '@playwright/test';
+import { freshAccount } from './helpers';
+
+interface TresoWindow {
+  __treso: {
+    status: string;
+    results: Array<{ result: number; balance: number }>;
+    balance: { amount: number; date: string } | null;
+    data: { leaves: unknown[]; charges: Array<{ id: string; name: string }> };
+    addLeaves: (input: unknown) => Promise<unknown>;
+    setBalance: (amount: number) => Promise<unknown>;
+    addCharge: (input: unknown) => Promise<unknown>;
+  };
+}
+
+/** La mise en page charge le store après le premier rendu : on attend qu’il soit prêt avant de le manipuler. */
+async function treso(page: Page): Promise<void> {
+  await page.waitForFunction(() => (window as unknown as Partial<TresoWindow>).__treso?.status === 'ready');
+}
+
+test('loads the state once and exposes engine results', async ({ page }) => {
+  await freshAccount(page);
+  await treso(page);
+  const result = await page.evaluate(() => {
+    const store = (window as unknown as TresoWindow).__treso;
+    return { first: store.results[0]?.result, balance: store.results[0]?.balance, count: store.results.length };
+  });
+  expect(result).toEqual({ first: -231_400, balance: 4_600_600, count: 15 });
+});
+
+test('rolls back by reloading when the API refuses a mutation', async ({ page }) => {
+  await freshAccount(page);
+  await treso(page);
+  const outcome = await page.evaluate(async () => {
+    const store = (window as unknown as TresoWindow).__treso;
+    const before = store.data.leaves.length;
+    const res = await store.addLeaves({ from: '2026-12-26', scope: 'ALL' }); // samedi → 422
+    return { res, before, after: store.data.leaves.length };
+  });
+  expect(outcome.res).toBeNull();
+  expect(outcome.after).toBe(outcome.before);
+  await expect(page.getByRole('status')).toContainText('Ce jour n’est pas ouvré');
+});
+
+// Compléments au brief : écriture optimiste, date locale du solde (R15), session expirée (R22), solde de la barre latérale.
+
+test('applies a balance optimistically and sends the browser local date', async ({ page }) => {
+  await freshAccount(page);
+  await treso(page);
+  await page.route('**/api/balance', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await route.continue();
+  });
+  const request = page.waitForRequest((r) => r.url().endsWith('/api/balance') && r.method() === 'POST');
+  const optimistic = await page.evaluate(() => {
+    const store = (window as unknown as TresoWindow).__treso;
+    void store.setBalance(1_234_500);
+    return { amount: store.balance?.amount, date: store.balance?.date }; // avant la réponse de l’API
+  });
+  expect(optimistic).toEqual({ amount: 1_234_500, date: '2026-10-04' });
+  expect((await request).postDataJSON()).toEqual({ amount: 1_234_500, date: '2026-10-04' });
+  await page.waitForResponse((r) => r.url().endsWith('/api/balance'));
+  const state = await (await page.request.get('/api/state')).json();
+  expect(state.balance.latest).toMatchObject({ amount: 1_234_500, date: '2026-10-04' });
+});
+
+test('replaces the temporary id of a created charge with the server one', async ({ page }) => {
+  await freshAccount(page);
+  await treso(page);
+  const created = await page.evaluate(async () => {
+    const store = (window as unknown as TresoWindow).__treso;
+    await store.addCharge({ name: 'Assurance pro', amount: 4_500, frequency: 'MONTHLY', month: null, category: null });
+    return store.data.charges.find((c) => c.name === 'Assurance pro')?.id ?? null;
+  });
+  expect(created).not.toBeNull();
+  expect(created).not.toMatch(/^tmp-/);
+});
+
+test('shows the latest balance in the sidebar', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'La barre latérale n’existe que sur desktop.');
+  await freshAccount(page);
+  const balance = page.getByRole('link', { name: /Sur le compte/ });
+  await expect(balance).toContainText(euros(4_832_000));
+  await expect(balance).toContainText('Mis à jour le');
+});
+
+test('sends the user back to the login screen when the session has expired', async ({ page }) => {
+  await freshAccount(page);
+  await treso(page);
+  await page.request.post('/api/auth/logout', { data: {} }); // la session meurt côté serveur, l’app ne le sait pas encore
+  const res = await page.evaluate(async () => (window as unknown as TresoWindow).__treso.setBalance(500_000));
+  expect(res).toBeNull();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('status')).toContainText('Ta session a expiré, reconnecte-toi.');
+  const data = await page.evaluate(() => (window as unknown as TresoWindow).__treso.data);
+  expect(data).toBeNull();
+});

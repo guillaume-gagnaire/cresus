@@ -45,6 +45,11 @@ export const useAuthStore = defineStore('auth', () => {
     await api('/auth/password', { method: 'PATCH', body: { currentPassword, newPassword } });
   }
 
+  /** Session perdue côté serveur : l’app repasse en « déconnecté » sans rappeler l’API. */
+  function reset() {
+    me.value = null;
+  }
+
   async function logout() {
     await api('/auth/logout', { method: 'POST' }).catch(() => undefined);
     me.value = null;
@@ -57,5 +62,5 @@ export const useAuthStore = defineStore('auth', () => {
     useTresoStore().reset();
   }
 
-  return { me, ready, fetchMe, login, register, loginWithPasskey, enablePasskey, disablePasskey, changePassword, logout, deleteAccount };
+  return { me, ready, fetchMe, reset, login, register, loginWithPasskey, enablePasskey, disablePasskey, changePassword, logout, deleteAccount };
 });
