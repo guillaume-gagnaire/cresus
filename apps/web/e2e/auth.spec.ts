@@ -10,9 +10,7 @@ test('creates an account and lands on the dashboard', async ({ page }) => {
   await page.getByLabel('Mot de passe', { exact: true }).fill('motdepasse1');
   await page.getByRole('button', { name: 'Créer mon compte' }).click();
   await expect(page).toHaveURL(/\/$/);
-  // Le tableau de bord (Task 26) affichera « Ce mois-ci, ça passe ? » : on vérifie ici l’arrivée dans l’app connectée.
-  await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Ce mois-ci, ça passe/ })).toBeVisible();
 });
 
 test('shows the API error on wrong credentials', async ({ page }) => {
