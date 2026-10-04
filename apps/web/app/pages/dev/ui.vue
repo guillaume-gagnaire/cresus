@@ -144,6 +144,16 @@ const smoothedBars = (label: (m: MonthKey, i: number) => string) =>
 const smoothedFull = computed(() => smoothedBars(monthTag));
 const smoothedMini = computed(() => smoothedBars((m) => monthLetter(m)));
 const smoothedAverage = `Moyenne lissée : ${euros(smoothing.average)} par mois`;
+
+// Valeurs minuscules : une valeur non nulle garde au moins 2 px, zéro n’a pas de barre.
+const tinyBars = [1_000_000, 4_000, -4_000, 0].map((value, i) => ({
+  key: `tiny-${i}`,
+  label: ['A', 'B', 'C', 'D'][i]!,
+  valueLabel: kEuros(value),
+  value,
+  aria: `Mois ${['A', 'B', 'C', 'D'][i]} : ${euros(value, { sign: true })}`,
+  selected: false,
+}));
 </script>
 
 <template>
@@ -321,6 +331,12 @@ const smoothedAverage = `Moyenne lissée : ${euros(smoothing.average)} par mois`
       <h2>Revenu lissé</h2>
       <SmoothedBars ariaLabel="Démo lissage" :bars="smoothedFull" :average="smoothing.average" :average-label="smoothedAverage" @select="smoothedMonth = $event" />
       <SmoothedBars compact ariaLabel="Démo compacte du lissage" :bars="smoothedMini" :average="smoothing.average" :average-label="smoothedAverage" @select="smoothedMonth = $event" />
+    </section>
+
+    <section class="card block" data-testid="chart-tiny">
+      <h2>Valeurs minuscules</h2>
+      <ResultBars ariaLabel="Démo valeurs minuscules" :bars="tinyBars" />
+      <MiniBars ariaLabel="Démo compacte des valeurs minuscules" :bars="tinyBars" />
     </section>
 
     <ConfirmDialog

@@ -3,6 +3,8 @@
  * « Combien te verser chaque mois » (Main-Micro.dc.html l. 118 à 131, Mobile-Accueil-Micro.dc.html l. 88 à 89) : barres
  * vertes, orange pour un mois bas (`low`), moyenne lissée en pointillés. Un seul sens : le « pour toi » du mois, 160 px au
  * plus pour le plus grand montant (ou la moyenne). `compact` : 15 colonnes sans défilement (100 px, libellés de 9 px).
+ * Un mois bas n’est pas signalé par la couleur seule : barre hachurée, et le composant ajoute « (mois bas) » au nom
+ * accessible de la colonne (l’appelant n’a pas à le faire).
  */
 const props = defineProps<{
   bars: { key: string; label: string; value: number; low: boolean; aria: string; selected: boolean }[];
@@ -26,9 +28,9 @@ const barHeight = (value: number): string => `${Math.max(props.compact ? 2 : 3, 
         v-for="(bar, i) in bars"
         :key="bar.key"
         type="button"
-        class="col"
+        class="col chart-col"
         :class="{ selected: bar.selected }"
-        :aria-label="bar.aria"
+        :aria-label="bar.low ? `${bar.aria} (mois bas)` : bar.aria"
         :aria-pressed="bar.selected"
         @click="emit('select', i)"
       >
@@ -49,7 +51,8 @@ const barHeight = (value: number): string => `${Math.max(props.compact ? 2 : 3, 
 .col.selected { background: var(--tip-bg); box-shadow: inset 0 0 0 2px var(--ink); }
 .slot { height: 160px; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
 .bar { width: 75%; display: block; border-radius: 8px; background: var(--bar-up); }
-.bar.low { background: var(--client-orange); }
+/* Hachures par-dessus l’orange : le mois bas se lit aussi sans la couleur. */
+.bar.low { background-color: var(--client-orange); background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(255, 255, 255, .7) 4px 8px); }
 .month { height: var(--label); font-size: 11px; line-height: 13px; font-weight: 700; color: var(--muted); text-align: center; }
 .average { position: absolute; left: 0; right: 0; border-top: 2.5px dashed var(--positive-ink); pointer-events: none; }
 .compact { --label: 11px; --gap: 3px; }
@@ -57,6 +60,7 @@ const barHeight = (value: number): string => `${Math.max(props.compact ? 2 : 3, 
 .compact .col { border-radius: 6px; }
 .compact .slot { height: 100px; }
 .compact .bar { width: 70%; border-radius: 4px; }
+.compact .bar.low { background-image: repeating-linear-gradient(135deg, transparent 0 3px, rgba(255, 255, 255, .7) 3px 6px); }
 .compact .month { font-size: 9px; line-height: 11px; }
 .compact .average { border-top-width: 2px; }
 </style>

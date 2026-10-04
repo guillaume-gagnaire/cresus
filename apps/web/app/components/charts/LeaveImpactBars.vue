@@ -3,7 +3,8 @@
  * « Ce que tes vacances font à chaque mois » (Calendrier.dc.html l. 116 à 140) : deux barres par mois, grise sans les
  * congés, verte ou rouge avec, sur un axe commun (86 px de chaque côté pour le plus grand montant). Les mois que les
  * congés font passer dans le rouge sont surlignés. `valueLabel` (« −2,3k ») s’affiche au-dessus, coloré selon le signe
- * du résultat avec congés. Graphique en lecture seule : chaque colonne est une image décrite par `aria`.
+ * du résultat avec congés. Graphique en lecture seule : chaque colonne est une image décrite par `aria`, à laquelle
+ * le composant ajoute « (à cause des vacances) » pour un mois surligné (teinte + contour en tirets, jamais la couleur seule).
  */
 const props = defineProps<{
   columns: { label: string; without: number; with: number; highlight: boolean; aria: string; valueLabel?: string }[];
@@ -11,7 +12,9 @@ const props = defineProps<{
 }>();
 
 const peak = computed(() => Math.max(1, ...props.columns.flatMap((c) => [Math.abs(c.without), Math.abs(c.with)])));
-const px = (n: number): string => `${Math.round((Math.abs(n) / peak.value) * 86)}px`;
+/** Une valeur non nulle garde au moins 2 px : un petit mois ne disparaît pas. */
+const px = (n: number): string => `${Math.max(2, Math.round((Math.abs(n) / peak.value) * 86))}px`;
+const nameOf = (c: { highlight: boolean; aria: string }): string => (c.highlight ? `${c.aria} (à cause des vacances)` : c.aria);
 const up = (n: number): string => (n > 0 ? px(n) : '0px');
 const down = (n: number): string => (n < 0 ? px(n) : '0px');
 </script>
@@ -20,7 +23,7 @@ const down = (n: number): string => (n < 0 ? px(n) : '0px');
   <div class="chart">
     <div class="scroll">
       <div class="grid" role="group" :aria-label="ariaLabel ?? 'Effet des vacances sur chaque mois'">
-        <div v-for="(column, i) in columns" :key="i" class="col" :class="{ lit: column.highlight }" role="img" :aria-label="column.aria">
+        <div v-for="(column, i) in columns" :key="i" class="col" :class="{ lit: column.highlight }" role="img" :aria-label="nameOf(column)">
           <span v-if="column.valueLabel" class="num value" :class="column.with < 0 ? 'neg' : 'pos'" aria-hidden="true">{{ column.valueLabel }}</span>
           <span class="plot" aria-hidden="true">
             <span class="half up">
@@ -50,8 +53,10 @@ const down = (n: number): string => (n < 0 ? px(n) : '0px');
 .chart { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .scroll { overflow-x: auto; padding: 5px; margin: -5px; }
 .grid { min-width: 760px; display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 8px; }
-.col { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; border-radius: 14px; }
+.col { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; border-radius: 14px; }
 .col.lit { background: var(--red-bg); }
+/* Contour en tirets : le mois surligné se distingue aussi sans la teinte (décoratif, le nom accessible le dit). */
+.col.lit::after { content: ''; position: absolute; inset: 2px; border: 2px dashed var(--red-ink); border-radius: 12px; pointer-events: none; }
 .value { font-size: 12px; }
 .value.pos { color: #1E6B3A; }
 .value.neg { color: #C2272D; }
@@ -68,5 +73,5 @@ const down = (n: number): string => (n < 0 ? px(n) : '0px');
 .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; font-weight: 600; color: var(--ink-3); }
 .key { display: flex; align-items: center; gap: 8px; }
 .swatch { width: 14px; height: 14px; border-radius: 4px; flex: none; }
-.swatch.lit { background: var(--red-bg); }
+.swatch.lit { background: var(--red-bg); border: 2px dashed var(--red-ink); }
 </style>

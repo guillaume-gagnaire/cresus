@@ -17,12 +17,13 @@ const emit = defineEmits<{ select: [index: number] }>();
 /** Axe de 2 px au milieu ; 3 px de marge en bout de demi-hauteur (79 → 76). */
 const reach = computed(() => Math.floor((props.height - 2) / 2) - 3);
 const peak = computed(() => Math.max(1, ...props.bars.map((b) => Math.abs(b.value))));
-const px = (n: number): string => `${Math.round((n / peak.value) * reach.value)}px`;
+/** Une valeur non nulle garde au moins 2 px : un petit mois ne disparaît pas. */
+const px = (n: number): string => `${Math.max(2, Math.round((n / peak.value) * reach.value))}px`;
 </script>
 
 <template>
   <div class="scroll">
-    <div class="grid" role="group" :aria-label="ariaLabel">
+    <div class="grid" role="group" :aria-label="ariaLabel" :style="{ gridTemplateColumns: `repeat(${bars.length}, minmax(0, 1fr))`, minWidth: `${bars.length * 52}px` }">
       <button
         v-for="(bar, i) in bars"
         :key="bar.key"
@@ -48,8 +49,8 @@ const px = (n: number): string => `${Math.round((n / peak.value) * reach.value)}
 <style scoped>
 /* Le défilement reste dans la carte ; la marge négative laisse la place du contour de focus sans décaler la mise en page. */
 .scroll { overflow-x: auto; padding: 5px; margin: -5px; }
-/* 780 px : 15 colonnes d’au moins 44 px de large, cibles tactiles comprises. */
-.grid { min-width: 780px; display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 8px; }
+/* 52 px par colonne (780 px pour 15 mois) : au moins 44 px de large par colonne, cibles tactiles comprises. */
+.grid { display: grid; gap: 8px; }
 .col { border: 0; background: transparent; padding: 6px 0; border-radius: 16px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; font: inherit; color: var(--ink); }
 .col.selected { background: var(--tip-bg); box-shadow: inset 0 0 0 2px var(--ink); }
 .value { font-size: 12px; }

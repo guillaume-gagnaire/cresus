@@ -260,3 +260,53 @@ test('compact smoothed bars and stacked bars keep their labels and values', asyn
   await expect(stacked.getByRole('img')).toHaveCount(12);
   await expect(stacked.getByRole('img').first()).toHaveAccessibleName(fr('octobre 2026 : 6 600 € encaissés'));
 });
+
+// Correctifs R27 : les états ne reposent jamais sur la couleur seule.
+
+test('smoothed bars: a low month is hatched and named « mois bas », in both variants', async ({ page }) => {
+  for (const name of ['Démo lissage', 'Démo compacte du lissage']) {
+    const smoothed = page.getByRole('group', { name, exact: true });
+    const low = smoothed.getByRole('button', { name: /mois bas/ });
+    // Octobre 2026, février 2027 et octobre 2027 sont sous 60 % de la moyenne ; aucun autre mois.
+    await expect(low).toHaveCount(3);
+    await expect(low.first()).toHaveAccessibleName(fr('octobre 2026 : 4 040 € pour toi (mois bas)'));
+    const image = (button: Locator) => button.evaluate((el) => getComputedStyle(el.querySelector('span span')!).backgroundImage);
+    for (const button of await low.all()) expect(await image(button)).toContain('repeating-linear-gradient');
+    const regular = smoothed.getByRole('button', { name: fr('mars 2027 : 13 110 € pour toi'), exact: true });
+    await expect(regular).toBeVisible();
+    expect(await image(regular)).toBe('none');
+  }
+});
+
+test('highlighted months have a dashed outline and say why, on compact bars (also read-only) and on leave bars', async ({ page }) => {
+  const dashed = (locator: Locator) => locator.evaluate((el) => getComputedStyle(el, '::after').borderTopStyle);
+  const compact = page.getByRole('group', { name: 'Démo compacte des barres' });
+  const feb = compact.getByRole('button', { name: fr('février 2027 : −2 310 € (à cause des vacances)'), exact: true });
+  await expect(feb).toBeVisible();
+  expect(await dashed(feb)).toBe('dashed');
+  const march = compact.getByRole('button', { name: fr('mars 2027 : +11 890 €'), exact: true });
+  await expect(march).toBeVisible();
+  expect(await dashed(march)).toBe('none');
+  await expect(compact.getByRole('button', { name: /à cause des vacances/ })).toHaveCount(2);
+
+  // Image seule : les mois surlignés sont nommés dans la description.
+  const readonly = page.getByRole('img', { name: 'Démo compacte des barres en lecture seule' });
+  await expect(readonly).toHaveAccessibleName(/à cause des vacances : février 2027 : −2\s310\s€, octobre 2027 : −5\s160\s€/);
+
+  const leave = page.getByRole('group', { name: 'Démo congés' });
+  const leaveFeb = leave.getByRole('img', { name: fr('février 2027 : +90 € sans vacances, −2 310 € avec vacances (à cause des vacances)'), exact: true });
+  await expect(leaveFeb).toBeVisible();
+  expect(await dashed(leaveFeb)).toBe('dashed');
+  await expect(leave.getByRole('img', { name: /à cause des vacances/ })).toHaveCount(2);
+  expect(await dashed(leave.getByRole('img', { name: /mars 2027/ }))).toBe('none');
+});
+
+test('non-zero values keep at least 2 px, zero has no bar', async ({ page }) => {
+  const bars = async (group: Locator) => {
+    await expect(group.getByRole('button')).toHaveCount(4);
+    return group.getByRole('button').evaluateAll((els) => els.map((el) => [...el.querySelectorAll('.bar')].map((b) => Math.round(b.getBoundingClientRect().height * 10) / 10)));
+  };
+  // Mois A : 10 000 € (pleine échelle), B : +40 € et C : −40 € (0,3 px à l’échelle), D : 0 €.
+  expect(await bars(page.getByRole('group', { name: 'Démo valeurs minuscules' }))).toEqual([[76, 0], [2, 0], [0, 2], [0, 0]]);
+  expect(await bars(page.getByRole('group', { name: 'Démo compacte des valeurs minuscules' }))).toEqual([[46, 0], [2, 0], [0, 2], [0, 0]]);
+});
