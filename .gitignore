@@ -12,3 +12,4 @@ test-results/
 !.env.example
 design.zip
 .superpowers/
+!apps/api/.env.e2e
