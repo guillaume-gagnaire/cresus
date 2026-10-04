@@ -8,7 +8,7 @@ const emit = defineEmits<{ prev: []; next: [] }>();
 </script>
 
 <template>
-  <div class="stepper" :class="size">
+  <div class="stepper" :class="`size-${size}`">
     <button type="button" class="arrow" aria-label="Mois précédent" :disabled="!canPrev" @click="emit('prev')">
       <AppIcon name="chevron-left" :size="size === 'lg' ? 20 : 18" />
     </button>
@@ -37,7 +37,7 @@ const emit = defineEmits<{ prev: []; next: [] }>();
 }
 .arrow:hover:not(:disabled) { background: var(--stepper-bg-hover, rgba(255, 255, 255, .95)); }
 .arrow:disabled { opacity: .4; cursor: not-allowed; }
-.month { font-family: var(--font-display); font-size: 22px; font-weight: 800; text-transform: capitalize; text-align: center; }
-.sm .arrow { width: 44px; height: 44px; }
-.sm .month { font-size: 19px; }
+.month { font-family: var(--font-display); font-size: 22px; font-weight: 800; text-transform: capitalize; text-align: center; color: inherit; }
+.size-sm .arrow { width: 44px; height: 44px; }
+.size-sm .month { font-size: 19px; }
 </style>

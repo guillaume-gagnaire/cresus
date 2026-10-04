@@ -39,6 +39,6 @@ withDefaults(
   .kpi { padding: 12px 14px; gap: 2px; }
   .label { font-size: 13px; }
   .value { font-size: 22px; }
-  .sub { font-size: 13px; color: var(--muted); }
+  .sub { font-size: 13px; }
 }
 </style>

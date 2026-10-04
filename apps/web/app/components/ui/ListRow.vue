@@ -14,7 +14,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="row item">
+  <div class="row">
     <div class="main">
       <span v-if="barColor" class="bar" :style="{ background: barColor }" aria-hidden="true" />
       <span v-if="$slots.icon" class="icon"><slot name="icon" /></span>

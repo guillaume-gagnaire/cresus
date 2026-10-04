@@ -76,6 +76,25 @@ test('switch works from the keyboard and from its visible label', async ({ page 
   await expect(sw).toHaveAttribute('aria-checked', 'false');
 });
 
+test('switch off state keeps a visible 2 px boundary, on state is the indigo fill', async ({ page }) => {
+  const sw = page.getByRole('switch', { name: 'Démo interrupteur' });
+  const track = sw.locator('.track');
+  // WCAG 1.4.11 : le fond de la piste éteinte (#E8DDCB) ne suffit pas, d’où le filet intérieur --muted (#6B6478).
+  const off = await track.evaluate((el) => getComputedStyle(el).boxShadow);
+  expect(off).toContain('rgb(107, 100, 120)');
+  expect(off).toContain('inset');
+  expect(off).toContain('2px');
+  const box = await track.boundingBox();
+  expect([box!.width, box!.height]).toEqual([56, 34]);
+  await sw.click();
+  // `toHaveCSS` réessaie : la piste passe à l’indigo avec une transition de 150 ms.
+  await expect(track).toHaveCSS('background-color', 'rgb(75, 75, 224)');
+  await expect(track).toHaveCSS('box-shadow', 'none');
+  // La taille ne bouge pas (le clic peut avoir fait défiler la page : on ne compare pas la position).
+  const after = await track.boundingBox();
+  expect([after!.width, after!.height]).toEqual([56, 34]);
+});
+
 test('money input accepts French typing, clamps to its bounds and rejects garbage', async ({ page }) => {
   const input = page.getByLabel('Démo montant');
   const value = page.getByTestId('money-value');
@@ -128,6 +147,21 @@ test('month stepper emits prev/next and disables the unavailable direction', asy
   await expect(small.getByRole('button', { name: 'Mois suivant' })).toBeDisabled();
 });
 
+test('month stepper label inherits the surrounding colour in both sizes', async ({ page }) => {
+  // Régression : le modificateur `sm` du pas-à-pas collisionnait avec la classe globale `.sm` (13 px, --muted).
+  for (const id of ['stepper-lg', 'stepper-sm']) {
+    const wrapper = page.getByTestId(id);
+    const colors = await wrapper.evaluate((el) => {
+      const root = el.firstElementChild as HTMLElement;
+      const month = root.querySelector('.month') as HTMLElement;
+      return { parent: getComputedStyle(el).color, root: getComputedStyle(root).color, month: getComputedStyle(month).color };
+    });
+    expect(colors.parent).toBe('rgb(31, 26, 46)');
+    expect(colors.root).toBe(colors.parent);
+    expect(colors.month).toBe(colors.parent);
+  }
+});
+
 test('confirm dialog: Escape cancels, focus is trapped and restored', async ({ page }) => {
   const opener = page.getByRole('button', { name: 'Ouvrir la confirmation' });
   await opener.click();
@@ -172,6 +206,8 @@ test('buttons: variants render, disabled does not emit', async ({ page }) => {
   await expect(page.getByTestId('click-count')).toHaveText('3');
   const disabled = page.getByRole('button', { name: 'Indisponible' });
   await expect(disabled).toBeDisabled();
+  await disabled.click({ force: true });
+  await expect(page.getByTestId('click-count')).toHaveText('3');
 });
 
 test('estimate note, empty state, tip and list rows show their texts', async ({ page }) => {
@@ -179,6 +215,13 @@ test('estimate note, empty state, tip and list rows show their texts', async ({ 
   await expect(page.getByText('Aucune charge pour le moment')).toBeVisible();
   await expect(page.getByText(/Pourquoi certains mois sont dans le rouge/)).toBeVisible();
   await expect(page.getByText('+1\u202F200\u00A0€')).toBeVisible();
+});
+
+test('kpi sub text stays ink-2 (AA on every tint, also on mobile)', async ({ page }) => {
+  // Régression : en mobile, `.sub` passait en --muted (4,09:1 sur la teinte danger).
+  await expect(page.locator('.kpi .sub')).toHaveCount(5);
+  const colors = await page.locator('.kpi .sub').evaluateAll((els) => els.map((el) => getComputedStyle(el).color));
+  for (const color of colors) expect(color).toBe('rgb(78, 71, 98)');
 });
 
 test('no horizontal scroll and visible keyboard focus', async ({ page }) => {
