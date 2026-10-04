@@ -50,8 +50,11 @@ describe('leaveKpis', () => {
 
   it('finds lowest balance in a later month', () => {
     const input = demoInput();
-    const results = monthResults(input);
-    const kpis = leaveKpis(input, results);
-    expect(kpis.lowestBalance).toBeLessThanOrEqual(Math.min(...results.map((r) => r.balance)));
+    const base = monthResults(input);
+    const tweaked = base.map((r, i) => (i === 5 ? { ...r, balance: -100 } : r));
+    const k = leaveKpis(input, tweaked);
+    expect(k.lowestBalance).toBe(-100);
+    expect(k.lowestBalanceMonth).toBe(base[5]!.month);
+    expect(k.overdraftCount).toBe(1);
   });
 });

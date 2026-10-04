@@ -77,9 +77,8 @@ describe('week template', () => {
   });
 
   it('shows null for weekdays with no assigned clients', () => {
-    const noOne = [{ ...a, weekdays: [0, 4] }, { ...b, weekdays: [1, 2, 3] }];
-    expect(weekTemplate(noOne, DEMO_TODAY)[0]?.clientId).toBe('client-a');
-    expect(weekTemplate([], DEMO_TODAY)[0]?.clientId).toBeNull();
+    const partial = [{ ...a, weekdays: [0] }, { ...b, weekdays: [1] }];
+    expect(weekTemplate(partial, DEMO_TODAY)[2]?.clientId).toBeNull();
   });
 
   it('cycles A → B → free → A', () => {
@@ -90,5 +89,14 @@ describe('week template', () => {
     expect(cycleWeekday(clients, DEMO_TODAY, 1)).toEqual([{ clientId: 'client-b', weekdays: [2, 3] }]);
     const freed = clients.map((x) => (x.id === 'client-b' ? { ...x, weekdays: [2, 3] } : x));
     expect(cycleWeekday(freed, DEMO_TODAY, 1)).toEqual([{ clientId: 'client-a', weekdays: [0, 1, 4] }]);
+  });
+
+  it('deduplicates overlapping weekdays when cycling', () => {
+    const overlap = [{ ...a, weekdays: [0, 4] }, { ...b, weekdays: [0, 1] }];
+    const patches = cycleWeekday(overlap, DEMO_TODAY, 0);
+    expect(patches).toEqual([
+      { clientId: 'client-a', weekdays: [4] },
+      { clientId: 'client-b', weekdays: [0, 1] },
+    ]);
   });
 });

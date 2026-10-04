@@ -109,6 +109,6 @@ export function cycleWeekday(clients: readonly Client[], today: ISODate, weekday
   const patches: Array<{ clientId: string; weekdays: number[] }> = [];
   const current = eligible[currentIdx];
   if (current) patches.push({ clientId: current.id, weekdays: current.weekdays.filter((d) => d !== weekday) });
-  if (next) patches.push({ clientId: next.id, weekdays: [...next.weekdays, weekday].sort((x, y) => x - y) });
+  if (next) patches.push({ clientId: next.id, weekdays: [...new Set([...next.weekdays, weekday])].sort((x, y) => x - y) });
   return patches;
 }
