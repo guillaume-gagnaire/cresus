@@ -56,9 +56,16 @@ export class AuthController {
     return this.auth.me(userId);
   }
 
+  @UseGuards(RateLimitGuard)
   @Patch('password')
   @HttpCode(204)
-  async changePassword(@CurrentUser() userId: string, @Body(new ZodPipe(passwordSchema)) body: z.infer<typeof passwordSchema>): Promise<void> {
+  async changePassword(
+    @CurrentUser() userId: string,
+    @Req() req: AuthedRequest,
+    @Body(new ZodPipe(passwordSchema)) body: z.infer<typeof passwordSchema>,
+  ): Promise<void> {
     await this.auth.changePassword(userId, body.currentPassword, body.newPassword);
+    // les autres appareils doivent se reconnecter avec le nouveau mot de passe ; la session courante est conservée
+    await this.sessions.destroyOthersForUser(userId, req.sessionToken as string);
   }
 }

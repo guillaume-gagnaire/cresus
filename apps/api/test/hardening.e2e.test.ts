@@ -5,6 +5,8 @@ import { AppError } from '../src/common/app-error.js';
 import { AppErrorFilter } from '../src/common/error.filter.js';
 import { ZodPipe } from '../src/common/zod.pipe.js';
 import { openDb } from '../src/db/client.js';
+import { runMigrations } from '../src/db/migrate.js';
+import { users } from '../src/db/schema.js';
 
 function fakeHost() {
   const res = { status: vi.fn().mockReturnThis(), json: vi.fn().mockReturnThis() };
@@ -59,5 +61,44 @@ describe('durcissements (R13)', () => {
     expect(() => pool.emit('error', new Error('connexion perdue'))).not.toThrow();
     expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('connexion perdue'), expect.any(String));
     await handle.close();
+  });
+});
+
+describe('journaux sans paramètres SQL', () => {
+  it('never logs the parameters of a failed query, only the SQL text and the cause', async () => {
+    const handle = await openDb('pglite:memory');
+    await runMigrations(handle);
+    const secret = 'secret-param@example.com';
+    const row = { email: secret, passwordHash: 'hash-secret-123', firstName: 'Prénom-secret' };
+    await handle.db.insert(users).values(row);
+    const error = await handle.db.insert(users).values(row).then(
+      () => new Error('la seconde insertion aurait dû échouer'),
+      (e: unknown) => e as Error,
+    );
+    // précondition : le message et la stack bruts de drizzle contiennent bien les paramètres
+    expect(error.stack).toContain(secret);
+
+    for (const logToConsole of [true, false]) {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const loggerError = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+      new AppErrorFilter(logToConsole).catch(error, fakeHost().host);
+      const logged = [...consoleError.mock.calls, ...loggerError.mock.calls].flat().map(String).join('\n');
+      expect(logged).toContain('Failed query');
+      expect(logged).toContain('insert into "users"');
+      expect(logged).toContain('duplicate key value');
+      expect(logged).not.toContain(secret);
+      expect(logged).not.toContain('hash-secret-123');
+      expect(logged).not.toContain('Prénom-secret');
+      vi.restoreAllMocks();
+    }
+    await handle.close();
+  });
+
+  it('strips the params of any error whose message starts with "Failed query"', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    new AppErrorFilter(true).catch(new Error('Failed query: select 1\nparams: 42,secret'), fakeHost().host);
+    const logged = consoleError.mock.calls.flat().map(String).join('\n');
+    expect(logged).toContain('Failed query: select 1');
+    expect(logged).not.toContain('secret');
   });
 });

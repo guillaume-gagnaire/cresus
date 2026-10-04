@@ -7,6 +7,13 @@ import { passkeys, users } from '../db/schema.js';
 import { toProfileDto } from '../data/mappers.js';
 import { hashPassword, verifyPassword } from './password.js';
 
+/** Violation de contrainte unique PostgreSQL (code SQLSTATE 23505), directement ou portée par la `cause` d'une erreur drizzle. */
+function isUniqueViolation(e: unknown): boolean {
+  const code = (x: unknown): unknown => (typeof x === 'object' && x !== null ? (x as { code?: unknown }).code : undefined);
+  return code(e) === '23505' || code((e as { cause?: unknown } | null)?.cause) === '23505';
+}
+
+const EMAIL_TAKEN = () => new AppError(409, 'EMAIL_TAKEN', 'Un compte existe déjà avec cet e-mail.');
 const INVALID = () => new AppError(401, 'INVALID_CREDENTIALS', 'E-mail ou mot de passe incorrect.');
 
 @Injectable()
@@ -15,12 +22,16 @@ export class AuthService {
 
   async register(input: { email: string; password: string; firstName: string }): Promise<string> {
     const [existing] = await this.db.select({ id: users.id }).from(users).where(eq(users.email, input.email));
-    if (existing) throw new AppError(409, 'EMAIL_TAKEN', 'Un compte existe déjà avec cet e-mail.');
-    const [user] = await this.db
-      .insert(users)
-      .values({ email: input.email, passwordHash: await hashPassword(input.password), firstName: input.firstName })
-      .returning({ id: users.id });
-    return user!.id;
+    if (existing) throw EMAIL_TAKEN();
+    const passwordHash = await hashPassword(input.password);
+    try {
+      const [user] = await this.db.insert(users).values({ email: input.email, passwordHash, firstName: input.firstName }).returning({ id: users.id });
+      return user!.id;
+    } catch (e) {
+      // deux inscriptions simultanées avec le même e-mail : la contrainte unique départage
+      if (isUniqueViolation(e)) throw EMAIL_TAKEN();
+      throw e;
+    }
   }
 
   async login(email: string, password: string): Promise<string> {

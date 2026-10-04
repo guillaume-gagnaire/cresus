@@ -13,6 +13,8 @@ export async function setupTestApp(overrides: Record<string, string> = {}): Prom
     DATABASE_URL: process.env.DATABASE_URL_TEST ?? 'pglite:memory',
     SESSION_SECRET: 'test-secret-test-secret',
     SEED_DEMO: 'false',
+    // limite haute par défaut pour que les tests d'auth restent déterministes ; les tests de limitation créent leur propre app
+    AUTH_RATE_LIMIT: '1000',
     ...overrides,
   });
   const app = await createApp(config);
