@@ -35,6 +35,17 @@ describe('leaveImpact', () => {
     expect(leaveImpact({ date: '2026-09-07', scope: 'ALL', clientId: null }, [clients[0]!])).toEqual([]);
     expect(leavesCost([{ date: '2026-09-07', scope: 'ALL', clientId: null }], [clients[0]!], false)).toBe(0);
   });
+
+  it('sums the cost of several leaves and honours includeProspects', () => {
+    const xmas: Leave[] = [
+      { date: '2026-12-28', scope: 'ALL', clientId: null }, // A: 650 €
+      { date: '2026-12-29', scope: 'ALL', clientId: null }, // B: 600 €
+    ];
+    expect(leavesCost(xmas, clients, false)).toBe(125_000);
+    const monday: Leave[] = [{ date: '2027-08-02', scope: 'ALL', clientId: null }]; // only C (prospect) works
+    expect(leavesCost(monday, clients, false)).toBe(0);
+    expect(leavesCost(monday, clients, true)).toBe(70_000);
+  });
 });
 
 describe('groupLeaves', () => {
@@ -78,5 +89,21 @@ describe('groupLeaves', () => {
     const leaves: Leave[] = [{ date: '2027-08-02', scope: 'ALL', clientId: null }]; // lundi : C (piste) y travaillerait
     expect(groupLeaves(makeInput({ clients, leaves }))[0]!.cost).toBe(0);
     expect(groupLeaves(makeInput({ clients, leaves }), { includeProspects: true })[0]!.cost).toBe(70_000);
+  });
+
+  it('collapses duplicate ALL leaves on the same date into one period with dayCount 1', () => {
+    const leaves: Leave[] = [
+      { id: 'x1', date: '2026-12-28', scope: 'ALL', clientId: null },
+      { id: 'x2', date: '2026-12-28', scope: 'ALL', clientId: null },
+    ];
+    const periods = groupLeaves(makeInput({ clients, leaves }));
+    expect(periods).toHaveLength(1);
+    expect(periods[0]).toMatchObject({
+      from: '2026-12-28',
+      to: '2026-12-28',
+      dayCount: 1,
+      cost: 65_000,
+      leaveIds: ['x1'],
+    });
   });
 });
