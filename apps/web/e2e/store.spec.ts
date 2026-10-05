@@ -130,6 +130,29 @@ test('rolls an optimistic edit back when the save fails and the reload fails too
   await expect(page.getByText('Assurance RC Pro').first()).toBeVisible(); // les charges de démo, elles, sont bien là
 });
 
+test('can still snapshot the state after a mutation that reassigned an array of reactive items', async ({ page }) => {
+  await freshAccount(page);
+  await treso(page);
+  // addLeaves remplace `data.leaves` par un tableau construit à partir d’éléments réactifs : la copie d’instantané doit le supporter
+  const added = await page.evaluate(async () => {
+    const store = (window as unknown as TresoWindow).__treso;
+    const before = store.data.leaves.length;
+    await store.addLeaves({ from: '2026-10-14', scope: 'ALL' });
+    return { before, after: store.data.leaves.length };
+  });
+  expect(added.after).toBe(added.before + 1);
+  await page.route('**/api/charges', (route) => route.abort());
+  await page.route('**/api/state', (route) => route.abort());
+  const outcome = await page.evaluate(async (charge) => {
+    const store = (window as unknown as TresoWindow).__treso;
+    const before = { leaves: store.data.leaves.length, charges: store.data.charges.length };
+    const res = await store.addCharge(charge);
+    return { res, before, after: { leaves: store.data.leaves.length, charges: store.data.charges.length } };
+  }, NEW_CHARGE);
+  expect(outcome.res).toBeNull();
+  expect(outcome.after).toEqual(outcome.before);
+});
+
 test('keeps the server state (not the snapshot) when the save fails but the reload succeeds', async ({ page }) => {
   await freshAccount(page);
   await treso(page);

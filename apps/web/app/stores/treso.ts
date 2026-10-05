@@ -114,8 +114,9 @@ export const useTresoStore = defineStore('treso', () => {
    */
   async function mutate<T>(apply: (s: StateDto) => void, call: () => Promise<T>, reconcile?: (s: StateDto, res: T) => void): Promise<T | null> {
     if (!data.value) return null;
-    // toRaw : structuredClone ne sait pas copier un proxy réactif ; le brut ne contient que des données simples
-    const snapshot = structuredClone(toRaw(data.value));
+    // Copie par JSON : l'état est un DTO JSON, et structuredClone échoue sur les proxys réactifs que les réconciliations
+    // (ex. `s.leaves = [...s.leaves, …]`) laissent dans les tableaux bruts, même après toRaw.
+    const snapshot = JSON.parse(JSON.stringify(data.value)) as StateDto;
     apply(data.value);
     try {
       const res = await call();
