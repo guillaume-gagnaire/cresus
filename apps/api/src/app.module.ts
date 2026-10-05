@@ -1,10 +1,10 @@
 import { existsSync } from 'node:fs';
 import { type DynamicModule, Logger, Module } from '@nestjs/common';
-import { ServeStaticModule } from '@nestjs/serve-static';
 import { AuthModule } from './auth/auth.module.js';
 import { type AppConfig, CONFIG } from './config.js';
 import { DataModule } from './data/data.module.js';
 import { DbModule } from './db/db.module.js';
+import { FrontService } from './front/front.service.js';
 import { HealthController } from './health/health.controller.js';
 import { McpModule } from './mcp/mcp.module.js';
 import { OAuthModule } from './oauth/oauth.module.js';
@@ -18,31 +18,10 @@ export class AppModule {
     return {
       module: AppModule,
       global: true,
-      imports: [
-        DbModule,
-        AuthModule,
-        DataModule,
-        OAuthModule,
-        McpModule,
-        SeedModule,
-        // le front (build Nuxt) est servi avec repli SPA ; l'API (/api), le MCP et les routes OAuth ne sont jamais interceptés
-        ...(serveFront && config.webDist
-          ? [
-              ServeStaticModule.forRoot({
-                rootPath: config.webDist,
-                exclude: ['/api/{*path}', '/mcp', '/authorize', '/token', '/register', '/revoke', '/.well-known/{*path}'],
-                serveStaticOptions: {
-                  setHeaders: (res, path) => {
-                    if (/[\\/]_nuxt[\\/]/.test(path)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-                    else res.setHeader('Cache-Control', 'no-cache');
-                  },
-                },
-              }),
-            ]
-          : []),
-      ],
+      imports: [DbModule, AuthModule, DataModule, OAuthModule, McpModule, SeedModule],
       controllers: [HealthController],
-      providers: [{ provide: CONFIG, useValue: config }],
+      // le front (build Nuxt) est servi avec repli SPA, après les routes : l'API (/api), le MCP et les routes OAuth ne sont jamais interceptés
+      providers: [{ provide: CONFIG, useValue: config }, ...(serveFront ? [FrontService] : [])],
       exports: [CONFIG],
     };
   }
