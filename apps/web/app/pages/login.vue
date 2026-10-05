@@ -2,6 +2,7 @@
 definePageMeta({ layout: 'auth' });
 
 const auth = useAuthStore();
+const route = useRoute();
 const toast = useToast();
 const { isDesktop } = useBreakpoint();
 
@@ -48,7 +49,8 @@ async function run(kind: 'password' | 'passkey', action: () => Promise<void>) {
   pending.value = kind;
   try {
     await action();
-    await navigateTo('/');
+    // Connexion ou inscription : retour à la page qui a demandé la session (ex. l’écran de consentement OAuth), sinon l’accueil.
+    await navigateTo(safeRedirect(route.query.redirect) ?? '/');
   } catch (e) {
     error.value = messageFor(e, kind === 'passkey');
   } finally {

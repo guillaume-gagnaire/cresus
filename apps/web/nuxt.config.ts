@@ -68,8 +68,9 @@ export default defineNuxtConfig({
     },
     devOptions: { enabled: false },
   },
+  // En dev, Nuxt (3000) relaie vers l’API (3001) tout ce qu’elle sert : en production, une seule origine sert le SPA et ces routes.
   nitro: {
-    devProxy: { '/api': { target: 'http://localhost:3001/api', changeOrigin: true } },
+    devProxy: Object.fromEntries(SERVER_ROUTES.map((route) => [`/${route}`, { target: `http://localhost:3001/${route}`, changeOrigin: true }])),
   },
   typescript: { strict: true },
 });
