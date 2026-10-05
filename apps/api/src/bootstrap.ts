@@ -4,6 +4,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
 import { AppErrorFilter } from './common/error.filter.js';
+import { securityHeaders } from './common/security-headers.middleware.js';
 import { jsonOnlyMutations } from './common/json-only.middleware.js';
 import { type AppConfig, loadConfig } from './config.js';
 import { mountMcp } from './mcp/mcp.server.js';
@@ -17,6 +18,9 @@ export async function createApp(config: AppConfig = loadConfig()): Promise<NestE
     abortOnError: false,
   });
   app.set('trust proxy', 1);
+  app.disable('x-powered-by');
+  // en premier : les en-têtes de sécurité couvrent aussi les routes OAuth, le MCP, le front et les réponses d'erreur
+  app.use(securityHeaders({ production: config.nodeEnv === 'production' }));
   app.setGlobalPrefix('api');
   // serveur d'autorisation OAuth 2.1 : middlewares Express montés avant les routes Nest et le repli SPA, hors du préfixe /api,
   // et avant le parseur JSON global (ils ont leurs propres parseurs, bornés)
