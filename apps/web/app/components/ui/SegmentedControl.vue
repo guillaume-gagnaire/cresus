@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends string | number">
 defineProps<{
-  options: readonly { value: T; label: string }[];
+  /** `ariaLabel` : nom accessible quand le libellé affiché est une abréviation (« A » pour « Client A »). */
+  options: readonly { value: T; label: string; ariaLabel?: string }[];
   ariaLabel: string;
 }>();
 const model = defineModel<T>({ required: true });
@@ -13,6 +14,7 @@ const model = defineModel<T>({ required: true });
       :key="option.value"
       type="button"
       :aria-pressed="option.value === model"
+      :aria-label="option.ariaLabel"
       @click="model = option.value"
     >
       {{ option.label }}

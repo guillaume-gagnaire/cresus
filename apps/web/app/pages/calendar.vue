@@ -1,7 +1,9 @@
-<template>
-  <h1>Tes vacances, ta tréso</h1>
-</template>
+<script setup lang="ts">
+/** `/calendar` : sur desktop, la page complète ; sur mobile, « Tes vacances ». */
+const { isDesktop } = useBreakpoint();
+</script>
 
-<style scoped>
-h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.02em; }
-</style>
+<template>
+  <CalendarDesktop v-if="isDesktop" />
+  <CalendarMobile v-else />
+</template>
