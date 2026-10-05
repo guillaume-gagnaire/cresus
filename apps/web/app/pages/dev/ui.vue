@@ -4,8 +4,9 @@ import {
   monthResults, monthShort, shortDate, smoothedIncome, type MonthKey,
 } from '@matreso/engine';
 
-// Page de démonstration du kit UI : n’existe qu’en développement (et sert de support aux tests e2e).
-definePageMeta({ middleware: [() => { if (!import.meta.dev) return navigateTo('/'); }] });
+// Page de démonstration du kit UI : n’existe qu’en développement et dans le build des tests e2e (NUXT_PUBLIC_E2E=true,
+// comme `window.__treso`), dont elle est le support ; le build livré redirige vers l’accueil.
+definePageMeta({ middleware: [() => { if (!import.meta.dev && !useRuntimeConfig().public.e2e) return navigateTo('/'); }] });
 
 const status = ref<'company' | 'micro'>('company');
 const statusOptions = [

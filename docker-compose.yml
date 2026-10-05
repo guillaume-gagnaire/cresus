@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: matreso
       POSTGRES_DB: matreso
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -14,5 +14,27 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+  app:
+    build: .
+    image: ma-treso
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://matreso:matreso@db:5432/matreso
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-change-me-change-me}
+      # origine publique du site, sans chemin ni « / » final : émetteur OAuth, ressource MCP (PUBLIC_URL + /mcp) et consentement
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-localhost}
+      WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-http://localhost:3000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SEED_DEMO: ${SEED_DEMO:-true}
+      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-demo1234}
+      AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-10}
+      # entier ≥ 1 (jamais vide : le « :- » reprend la valeur par défaut si la variable est vide)
+      OAUTH_RATE_LIMIT_MULTIPLIER: ${OAUTH_RATE_LIMIT_MULTIPLIER:-1}
+      TZ: Europe/Paris
+    ports:
+      - "${APP_PORT:-3000}:3000"
 volumes:
   db-data: {}

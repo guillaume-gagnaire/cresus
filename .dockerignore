@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/.output
+**/.nuxt
+**/coverage
+**/playwright-report
+**/test-results
+.git
+.claude
+.superpowers
+design.zip
+**/.env
+**/.env.*

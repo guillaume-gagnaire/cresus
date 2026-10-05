@@ -1,7 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { expect, type APIRequestContext, type Page, test } from '@playwright/test';
 
-const ORIGIN = 'http://localhost:3000';
+// même origine que le baseURL de Playwright (3000 en dev, 3100 contre le build de production) : c’est aussi le PUBLIC_URL de l’API
+const ORIGIN = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 const RESOURCE = `${ORIGIN}/mcp`;
 const CALLBACK = 'http://localhost:3999/callback';
 const CONSENT_PATH = /^\/oauth\/consent\?request=[0-9a-f-]{36}$/;
