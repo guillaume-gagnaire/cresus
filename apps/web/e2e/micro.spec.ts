@@ -36,6 +36,11 @@ test('the test mission tips the year over the ceiling and names the month', asyn
   await expect(page.getByText(/Tu frôles le plafond/)).toBeVisible();
   await page.getByRole('checkbox', { name: /Tester une mission en plus/ }).check();
   await expect(page.getByText(/tu dépasses le plafond en décembre 2026/)).toBeVisible();
+  // Le dépassement est dit en rouge (teinte « danger »), pas seulement par le texte : avant la mission test, la jauge est en jaune.
+  const message = page.getByRole('status').filter({ hasText: 'tu dépasses le plafond' });
+  await expect(message).toHaveClass(/level-OVER/);
+  await expect(message).toHaveCSS('background-color', 'rgb(251, 210, 206)');
+  await expect(message).toHaveCSS('color', 'rgb(122, 26, 19)');
 });
 
 test('the status switch goes back to company mode', async ({ page }) => {
