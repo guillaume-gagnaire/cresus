@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { MeDto, UserRole } from '@matreso/engine';
 import { eq } from 'drizzle-orm';
 import { AppError } from '../common/app-error.js';
+import { uniqueViolation } from '../common/pg-errors.js';
 import { DB, type Db } from '../db/db.module.js';
 import { passkeys, users } from '../db/schema.js';
 import { toProfileDto } from '../data/mappers.js';
@@ -9,16 +10,6 @@ import { hashPassword, verifyPassword } from './password.js';
 
 /** Nom de l'index unique partiel qui garantit un seul ADMIN (cf. db/schema.ts). */
 const SINGLE_ADMIN_CONSTRAINT = 'users_single_admin_uq';
-
-/** Violation de contrainte unique PostgreSQL (code SQLSTATE 23505), portée par l'erreur ou par la `cause` d'une erreur drizzle. */
-function uniqueViolation(e: unknown): { constraint: string | undefined } | undefined {
-  for (const candidate of [e, (e as { cause?: unknown } | null)?.cause]) {
-    if (typeof candidate !== 'object' || candidate === null) continue;
-    const { code, constraint } = candidate as { code?: unknown; constraint?: unknown };
-    if (code === '23505') return { constraint: typeof constraint === 'string' ? constraint : undefined };
-  }
-  return undefined;
-}
 
 const EMAIL_TAKEN = () => new AppError(409, 'EMAIL_TAKEN', 'Un compte existe déjà avec cet e-mail.');
 const INVALID = () => new AppError(401, 'INVALID_CREDENTIALS', 'E-mail ou mot de passe incorrect.');

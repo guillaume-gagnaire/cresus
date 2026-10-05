@@ -6,6 +6,7 @@ import {
 } from '@simplewebauthn/server';
 import { eq } from 'drizzle-orm';
 import { AppError } from '../common/app-error.js';
+import { uniqueViolation } from '../common/pg-errors.js';
 import { type AppConfig, CONFIG } from '../config.js';
 import { DB, type Db } from '../db/db.module.js';
 import { passkeys, users } from '../db/schema.js';
@@ -51,13 +52,19 @@ export class PasskeyService {
     }
     if (!verification.verified || !verification.registrationInfo) throw INVALID();
     const { credential } = verification.registrationInfo;
-    await this.db.insert(passkeys).values({
-      userId,
-      credentialId: credential.id,
-      publicKey: Buffer.from(credential.publicKey),
-      counter: credential.counter,
-      transports: credential.transports ?? [],
-    });
+    try {
+      await this.db.insert(passkeys).values({
+        userId,
+        credentialId: credential.id,
+        publicKey: Buffer.from(credential.publicKey),
+        counter: credential.counter,
+        transports: credential.transports ?? [],
+      });
+    } catch (e) {
+      // la même passkey (credential_id unique) enregistrée deux fois, par un double clic ou un rejeu : refus propre, pas une 500
+      if (uniqueViolation(e)) throw INVALID();
+      throw e;
+    }
   }
 
   authenticationOptions(): Promise<PublicKeyCredentialRequestOptionsJSON> {

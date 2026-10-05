@@ -134,6 +134,23 @@ describe('passkeys', () => {
       expect(gone.body.code).toBe('PASSKEY_UNKNOWN');
     });
 
+    it('answers PASSKEY_INVALID (400), not a 500, when the same passkey is registered twice or by another account', async () => {
+      const agent = await register();
+      const authenticator = makeAuthenticator();
+      await enable(agent, authenticator);
+      const again = await agent.post('/api/auth/passkeys/register/options').send({}).expect(201);
+      const twice = await agent.post('/api/auth/passkeys/register/verify').send(authenticator.attest(again.body.challenge)).expect(400);
+      expect(twice.body).toMatchObject({ code: 'PASSKEY_INVALID', message: 'Impossible d’activer Face ID sur cet appareil.' });
+
+      const other = agentFor(app);
+      await other.post('/api/auth/register').send({ email: 'other@example.com', password: 'motdepasse1', firstName: 'O' }).expect(201);
+      const opts = await other.post('/api/auth/passkeys/register/options').send({}).expect(201);
+      const stolen = await other.post('/api/auth/passkeys/register/verify').send(authenticator.attest(opts.body.challenge)).expect(400);
+      expect(stolen.body.code).toBe('PASSKEY_INVALID');
+      expect((await other.get('/api/auth/me').expect(200)).body.hasPasskey).toBe(false);
+      expect(await app.get<Db>(DB).select().from(passkeys)).toHaveLength(1);
+    });
+
     it('rejects a login signed by another key and a registration for a different challenge', async () => {
       const agent = await register();
       const authenticator = makeAuthenticator();
