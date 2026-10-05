@@ -1,6 +1,6 @@
 import { demoExportFile } from '@matreso/engine';
 import { expect, type Page, test } from '@playwright/test';
-import { freshAccount } from './helpers';
+import { connectApp, freshAccount, mcpStatus } from './helpers';
 
 const OLD_PASSWORD = 'motdepasse1';
 
@@ -33,6 +33,30 @@ test('exports a JSON backup', async ({ page }) => {
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Exporter mes données' }).click();
   expect((await download).suggestedFilename()).toMatch(/^ma-treso-\d{4}-\d{2}-\d{2}\.json$/);
+});
+
+test('releases the export blob URL only after a delay, so iOS Safari can read it', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __exportTimes: { clicked: number[]; revoked: number[] } };
+    w.__exportTimes = { clicked: [], revoked: [] };
+    const click = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function patchedClick() {
+      if (this.download) w.__exportTimes.clicked.push(performance.now());
+      return click.call(this);
+    };
+    const revoke = URL.revokeObjectURL.bind(URL);
+    URL.revokeObjectURL = (url: string) => { w.__exportTimes.revoked.push(performance.now()); revoke(url); };
+  });
+  await freshAccount(page);
+  await page.goto('/profile');
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exporter mes données' }).click();
+  await download;
+  const times = () => page.evaluate(() => (window as unknown as { __exportTimes: { clicked: number[]; revoked: number[] } }).__exportTimes);
+  expect((await times()).clicked).toHaveLength(1);
+  await expect.poll(async () => (await times()).revoked.length, { timeout: 5_000 }).toBe(1);
+  const { clicked, revoked } = await times();
+  expect(revoked[0]! - clicked[0]!).toBeGreaterThanOrEqual(900);
 });
 
 test('rejects an invalid import file', async ({ page }) => {
@@ -190,6 +214,54 @@ test.describe('sécurité', () => {
     await expect(page.getByLabel('Nouveau mot de passe')).toHaveCount(0);
     const fresh = await page.request.post('/api/auth/login', { data: { email, password: 'nouveaumdp2' } });
     expect(fresh.ok()).toBe(true);
+  });
+
+  test('disconnects the connected applications after a confirmation: their access token is then refused', async ({ page }) => {
+    await freshAccount(page);
+    const token = await connectApp(page.request);
+    expect(await mcpStatus(page.request, token)).toBe(200);
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Déconnecter les applications (Claude Code…)' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('Claude Code et les autres applications connectées à ton compte perdront leur accès.', { exact: false })).toBeVisible();
+    // « Annuler » ne révoque rien
+    await dialog.getByRole('button', { name: 'Annuler' }).click();
+    await expect(dialog).toBeHidden();
+    expect(await mcpStatus(page.request, token)).toBe(200);
+
+    await page.getByRole('button', { name: 'Déconnecter les applications (Claude Code…)' }).click();
+    const revoked = page.waitForResponse((r) => r.request().method() === 'POST' && r.url().endsWith('/api/oauth/tokens/revoke-all'));
+    await dialog.getByRole('button', { name: 'Déconnecter les applications' }).click();
+    expect((await revoked).status()).toBe(200);
+    await expect(page.getByRole('status')).toContainText('Applications déconnectées.');
+    expect(await mcpStatus(page.request, token)).toBe(401);
+    // la session web, elle, reste ouverte
+    expect((await page.request.get('/api/auth/me')).ok()).toBe(true);
+  });
+
+  test('reports a failure to disconnect the applications and keeps the page usable', async ({ page }) => {
+    await freshAccount(page);
+    await page.goto('/profile');
+    await page.route('**/api/oauth/tokens/revoke-all', (route) => route.abort());
+    await page.getByRole('button', { name: 'Déconnecter les applications (Claude Code…)' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Déconnecter les applications' }).click();
+    await expect(page.getByRole('status')).toContainText('Connexion impossible. Vérifie ton réseau.');
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Déconnecter les applications (Claude Code…)' })).toBeEnabled();
+  });
+
+  test('a password change also cuts the connected applications, and says so beforehand', async ({ page }) => {
+    await freshAccount(page);
+    const token = await connectApp(page.request);
+    expect(await mcpStatus(page.request, token)).toBe(200);
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Changer de mot de passe' }).click();
+    await expect(page.getByText('Les applications connectées (Claude Code…) seront déconnectées.')).toBeVisible();
+    await page.getByLabel('Mot de passe actuel').fill(OLD_PASSWORD);
+    await page.getByLabel('Nouveau mot de passe').fill('nouveaumdp2');
+    await page.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(page.getByRole('status')).toContainText('Mot de passe modifié.');
+    expect(await mcpStatus(page.request, token)).toBe(401);
   });
 
   test('shows the API error on a wrong current password and on a too short new one', async ({ page }) => {

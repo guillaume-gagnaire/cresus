@@ -102,6 +102,24 @@ async function submitPassword(): Promise<void> {
   }
 }
 
+// Accès accordés à des applications (Claude Code…) : une boîte de confirmation, puis l’API révoque tous les jetons du compte.
+const appsOpen = ref(false);
+const appsBusy = ref(false);
+
+async function revokeApps(): Promise<void> {
+  if (appsBusy.value) return;
+  appsBusy.value = true;
+  try {
+    await auth.revokeAppAccess();
+    toast.show('Applications déconnectées.');
+  } catch (e) {
+    toast.error(e instanceof ApiError ? e.message : 'Déconnexion impossible. Réessaie dans un instant.');
+  } finally {
+    appsBusy.value = false;
+    appsOpen.value = false; // le message s’affiche sur la page, pas sous la boîte
+  }
+}
+
 // --- Alertes ------------------------------------------------------------------------------------------------------
 
 const ALERTS = [
@@ -238,13 +256,17 @@ async function deleteAccount(password?: string): Promise<void> {
         <form v-if="passwordOpen" :id="passwordFormId" class="password-form" novalidate @submit.prevent="submitPassword">
           <label class="field">Mot de passe actuel<input ref="currentInput" v-model="currentPassword" name="current-password" type="password" autocomplete="current-password" required></label>
           <label class="field">Nouveau mot de passe<input v-model="newPassword" name="new-password" type="password" autocomplete="new-password" :aria-describedby="passwordHintId" required></label>
-          <span :id="passwordHintId" class="sm">8 caractères minimum.</span>
+          <span :id="passwordHintId" class="sm">8 caractères minimum. Les applications connectées (Claude Code…) seront déconnectées.</span>
           <p v-if="passwordError" class="error" role="alert">{{ passwordError }}</p>
           <div class="actions">
             <AppButton type="submit" variant="primary" :disabled="passwordBusy">Enregistrer</AppButton>
             <AppButton @click="closePassword">Annuler</AppButton>
           </div>
         </form>
+        <button type="button" class="row action" :disabled="appsBusy" @click="appsOpen = true">
+          <span class="text"><span class="title">Déconnecter les applications (Claude Code…)</span><span class="sm">Coupe l’accès des applications connectées à ton compte</span></span>
+          <AppIcon class="chevron" name="chevron-right" :size="18" />
+        </button>
       </div>
     </section>
 
@@ -278,6 +300,14 @@ async function deleteAccount(password?: string): Promise<void> {
     <button type="button" class="delete" @click="deleteOpen = true">Supprimer mon compte</button>
     <p class="sm version">Ma Tréso · version 1.0</p>
 
+    <ConfirmDialog
+      :open="appsOpen"
+      title="Déconnecter les applications&#160;?"
+      message="Claude Code et les autres applications connectées à ton compte perdront leur accès. Elles devront te redemander l’autorisation pour s’y reconnecter."
+      confirm-label="Déconnecter les applications"
+      @confirm="revokeApps"
+      @cancel="appsOpen = false"
+    />
     <ConfirmDialog
       :open="pendingFile !== null"
       title="Remplacer tes données&#160;?"

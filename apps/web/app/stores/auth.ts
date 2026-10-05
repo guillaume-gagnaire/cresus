@@ -45,6 +45,11 @@ export const useAuthStore = defineStore('auth', () => {
     await api('/auth/password', { method: 'PATCH', body: { currentPassword, newPassword } });
   }
 
+  /** « Déconnecter les applications » : révoque tous les accès OAuth du compte (Claude Code…). Renvoie le nombre d’accès révoqués. */
+  async function revokeAppAccess(): Promise<number> {
+    return (await api<{ revoked: number }>('/oauth/tokens/revoke-all', { method: 'POST' })).revoked;
+  }
+
   /** Session perdue côté serveur : l’app repasse en « déconnecté » sans rappeler l’API. */
   function reset() {
     me.value = null;
@@ -62,5 +67,5 @@ export const useAuthStore = defineStore('auth', () => {
     useTresoStore().reset();
   }
 
-  return { me, ready, fetchMe, reset, login, register, loginWithPasskey, enablePasskey, disablePasskey, changePassword, logout, deleteAccount };
+  return { me, ready, fetchMe, reset, login, register, loginWithPasskey, enablePasskey, disablePasskey, changePassword, revokeAppAccess, logout, deleteAccount };
 });
