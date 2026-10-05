@@ -6,6 +6,7 @@ import { type AppConfig, CONFIG } from './config.js';
 import { DataModule } from './data/data.module.js';
 import { DbModule } from './db/db.module.js';
 import { HealthController } from './health/health.controller.js';
+import { McpModule } from './mcp/mcp.module.js';
 import { OAuthModule } from './oauth/oauth.module.js';
 import { SeedModule } from './seed/seed.module.js';
 
@@ -22,6 +23,7 @@ export class AppModule {
         AuthModule,
         DataModule,
         OAuthModule,
+        McpModule,
         SeedModule,
         // le front (build Nuxt) est servi avec repli SPA ; l'API (/api), le MCP et les routes OAuth ne sont jamais interceptés
         ...(serveFront && config.webDist

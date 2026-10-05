@@ -6,6 +6,7 @@ import { AppModule } from './app.module.js';
 import { AppErrorFilter } from './common/error.filter.js';
 import { jsonOnlyMutations } from './common/json-only.middleware.js';
 import { type AppConfig, loadConfig } from './config.js';
+import { mountMcp } from './mcp/mcp.server.js';
 import { mountOAuth } from './oauth/oauth.mount.js';
 
 /** Les migrations sont jouées par DbModule à l'ouverture de la base. */
@@ -20,6 +21,8 @@ export async function createApp(config: AppConfig = loadConfig()): Promise<NestE
   // serveur d'autorisation OAuth 2.1 : middlewares Express montés avant les routes Nest et le repli SPA, hors du préfixe /api,
   // et avant le parseur JSON global (ils ont leurs propres parseurs, bornés)
   mountOAuth(app, config);
+  // serveur MCP (/mcp) : protégé par les jetons Bearer d'OAuth, avec son propre parseur JSON (1 Mo), lui aussi avant le parseur global
+  mountMcp(app, config);
   // une sauvegarde JSON peut dépasser les 100 ko par défaut d'Express
   app.useBodyParser('json', { limit: '5mb' });
   app.use(cookieParser(config.sessionSecret));

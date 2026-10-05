@@ -627,7 +627,11 @@ describe('static front and OAuth routes', () => {
     expect((await http().get('/token').expect(405)).body.error).toBe('method_not_allowed');
     expect((await http().get('/register').expect(405)).body.error).toBe('method_not_allowed');
     expect((await http().get('/revoke').expect(405)).body.error).toBe('method_not_allowed');
-    for (const path of ['/mcp', '/.well-known/openid-configuration', '/.well-known/oauth-authorization-server/x']) {
+    // /mcp existe (Task 39) : sans jeton, c'est le 401 du serveur MCP, jamais le repli SPA
+    const mcp = await http().get('/mcp').expect(401);
+    expect(mcp.text).not.toContain('<title>spa</title>');
+    expect(mcp.headers['www-authenticate']).toContain('resource_metadata=');
+    for (const path of ['/.well-known/openid-configuration', '/.well-known/oauth-authorization-server/x']) {
       const res = await http().get(path);
       expect(res.status, path).toBe(404);
       expect(res.text, path).not.toContain('<title>spa</title>');

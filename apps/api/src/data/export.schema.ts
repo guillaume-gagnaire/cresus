@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { isoDate, signedCents } from '../common/schemas.js';
 import { chargeInputSchema } from './charges.service.js';
 import { clientFields, rateSchema } from './clients.service.js';
-import { profileFields } from './profile.controller.js';
+import { profileFields } from './profile.service.js';
 
 export const exportFileSchema = z
   .object({
