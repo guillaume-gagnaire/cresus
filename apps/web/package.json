@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
+    "@vite-pwa/nuxt": "^1.1.1",
     "typescript": "~5.9",
     "vue-tsc": "^3.3.12"
   }
