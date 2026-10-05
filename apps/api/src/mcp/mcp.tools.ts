@@ -230,7 +230,7 @@ export function registerTools(server: McpServer, { userId, services, today }: To
       description: 'Enregistre le solde actuel du compte bancaire : il devient le point de départ de la projection. Le montant est en euros et peut être négatif.',
     },
     { amount: euros('Solde du compte'), date: date('Date du solde, par défaut aujourd’hui').optional() },
-    async (args) => balanceView(await balance.create(userId, parseWith(balanceSchema, { amount: toCents(args.amount), date: args.date ?? today() }))),
+    async (args) => balanceView(await balance.create(userId, parseWith(balanceSchema, { amount: toCents(args.amount), date: args.date ?? today() }), today())),
   );
 
   // --- clients et tarifs ------------------------------------------------------------------------------------------

@@ -290,6 +290,9 @@ describe('MCP server (Streamable HTTP, stateless)', () => {
       expect(await ok(client, 'get_overview')).toMatchObject({ balance: 51_234.56, balanceDate: '2026-10-04' });
       expect(await ok(client, 'set_balance', { amount: -120.5, date: '2026-10-03' })).toMatchObject({ amount: -120.5, date: '2026-10-03' });
       expect(await fails(client, 'set_balance', { amount: 10, date: '2026-02-30' })).toBe('Date invalide.');
+      // la date du jour est celle (figée) du serveur : le lendemain est dans le futur
+      expect(await fails(client, 'set_balance', { amount: 10, date: '2026-10-05' })).toBe('La date du solde ne peut pas être dans le futur.');
+      expect(await ok(client, 'set_balance', { amount: 12, date: '2026-10-04' })).toMatchObject({ amount: 12, date: '2026-10-04' });
       expect(await fails(client, 'set_balance', { amount: 2e7 })).toBe('Données invalides.');
     });
   });

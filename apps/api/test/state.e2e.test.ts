@@ -1,3 +1,4 @@
+import { addDays, localToday } from '@matreso/engine';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { agentFor, resetDb, setupTestApp } from './helpers.js';
@@ -36,6 +37,19 @@ describe('state, profile, balance', () => {
     const state = await agent.get('/api/state').expect(200);
     expect(state.body.balance.latest).toMatchObject({ amount: -12_000 });
     expect(state.body.balance.history).toHaveLength(2);
+  });
+
+  it('refuses a balance dated in the future (422), accepts today and the past, and stores nothing on refusal', async () => {
+    const agent = await login();
+    const tomorrow = addDays(localToday(), 1);
+    const refused = await agent.post('/api/balance').send({ amount: 100, date: tomorrow }).expect(422);
+    expect(refused.body).toMatchObject({ statusCode: 422, code: 'BALANCE_IN_FUTURE', message: 'La date du solde ne peut pas être dans le futur.' });
+    await agent.post('/api/balance').send({ amount: 100, date: '2999-12-31' }).expect(422);
+    expect((await agent.get('/api/state').expect(200)).body.balance.history).toHaveLength(0);
+    await agent.post('/api/balance').send({ amount: 100, date: localToday() }).expect(201);
+    await agent.post('/api/balance').send({ amount: 100, date: '2020-01-31' }).expect(201);
+    await agent.post('/api/balance').send({ amount: 100 }).expect(201);
+    expect((await agent.get('/api/state').expect(200)).body.balance.history).toHaveLength(3);
   });
 
   it('isolates users', async () => {

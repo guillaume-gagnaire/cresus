@@ -1,4 +1,4 @@
-import { demoExportFile, workingDaysBetween } from '@matreso/engine';
+import { addDays, demoExportFile, localToday, workingDaysBetween } from '@matreso/engine';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { SeedService } from '../src/seed/seed.service.js';
@@ -58,6 +58,22 @@ describe('export, import, account, seed', () => {
     await agent.post('/api/import').send(broken).expect(400);
     const state = await agent.get('/api/state').expect(200);
     expect(state.body.clients).toHaveLength(4);
+  });
+
+  it('refuses a file holding a balance dated in the future, with a readable message, and changes nothing', async () => {
+    const agent = await login();
+    await agent.post('/api/import').send(demoExportFile()).expect(201);
+    const file = demoExportFile();
+    const future = { ...file, balanceSnapshots: [...file.balanceSnapshots, { date: addDays(localToday(), 1), amount: 1_000 }] };
+    const res = await agent.post('/api/import').send(future).expect(422);
+    expect(res.body).toMatchObject({ code: 'BALANCE_IN_FUTURE', message: 'Ce fichier contient un solde daté dans le futur : corrige-le avant de l’importer.' });
+    const state = await agent.get('/api/state').expect(200);
+    expect(state.body.clients).toHaveLength(4);
+    expect(state.body.balance.history).toHaveLength(1);
+    // l'historique passé et celui d'aujourd'hui restent importables
+    const past = { ...file, balanceSnapshots: [{ date: '2019-05-01', amount: 5 }, { date: localToday(), amount: 6 }] };
+    const imported = await agent.post('/api/import').send(past).expect(201);
+    expect(imported.body.balance.history).toHaveLength(2);
   });
 
   it('normalises clients like the entry forms do (weekdays deduplicated and sorted, subtitle trimmed)', async () => {

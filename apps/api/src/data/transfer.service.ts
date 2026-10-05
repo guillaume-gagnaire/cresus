@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { type ExportFileV1, isWorkingDay, type StateDto } from '@matreso/engine';
+import { type ExportFileV1, type ISODate, isWorkingDay, localToday, type StateDto } from '@matreso/engine';
 import { eq } from 'drizzle-orm';
+import { AppError } from '../common/app-error.js';
 import { DB, type Db } from '../db/db.module.js';
 import { balanceSnapshots, charges, clients, leaves, rates, users } from '../db/schema.js';
 import type { ExportFileInput } from './export.schema.js';
@@ -32,8 +33,14 @@ export class TransferService {
     };
   }
 
-  /** Remplace toutes les données de l'utilisateur, dans une transaction. */
-  async importFile(userId: string, file: ExportFileInput): Promise<StateDto> {
+  /**
+   * Remplace toutes les données de l'utilisateur, dans une transaction. L'historique passé est repris tel quel, mais un solde
+   * daté du futur est refusé (comme à la saisie) plutôt que supprimé en silence.
+   */
+  async importFile(userId: string, file: ExportFileInput, today: ISODate = localToday()): Promise<StateDto> {
+    if (file.balanceSnapshots.some((b) => b.date > today)) {
+      throw new AppError(422, 'BALANCE_IN_FUTURE', 'Ce fichier contient un solde daté dans le futur : corrige-le avant de l’importer.');
+    }
     await this.db.transaction(async (tx) => {
       // verrou sur la ligne de l'utilisateur : deux imports simultanés (double clic, deux onglets) s'exécutent l'un après l'autre au lieu de dupliquer les données
       await tx.select({ id: users.id }).from(users).where(eq(users.id, userId)).for('update');
