@@ -1,6 +1,6 @@
 import { BILLING_MODES, CHARGE_FREQUENCIES, CLIENT_COLORS, LEAVE_SCOPES, LEGAL_STATUSES, PAYMENT_TERM_KEYS } from '@matreso/engine';
 import { sql } from 'drizzle-orm';
-import { bigint, boolean, customType, date, index, integer, pgEnum, pgTable, smallint, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { bigint, boolean, customType, date, index, integer, jsonb, pgEnum, pgTable, smallint, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' });
 
@@ -103,3 +103,52 @@ export const charges = pgTable('charges', {
   category: text('category'),
   createdAt: createdAt(),
 }, (t) => [index('charges_user_idx').on(t.userId)]);
+
+/** Clients OAuth enregistrés dynamiquement (RFC 7591) : toujours publics, sans secret. */
+export const oauthClients = pgTable('oauth_clients', {
+  clientId: text('client_id').primaryKey(),
+  clientName: text('client_name').notNull(),
+  redirectUris: text('redirect_uris').array().notNull(),
+  /** Métadonnées d'enregistrement complètes, telles que renvoyées au client. */
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull(),
+  createdAt: createdAt(),
+});
+
+const oauthClientRef = () => text('client_id').notNull().references(() => oauthClients.clientId, { onDelete: 'cascade' });
+
+/** Demande d'autorisation en attente du consentement de l'utilisateur (10 min). */
+export const oauthRequests = pgTable('oauth_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  clientId: oauthClientRef(),
+  redirectUri: text('redirect_uri').notNull(),
+  codeChallenge: text('code_challenge').notNull(),
+  state: text('state'),
+  scope: text('scope').notNull(),
+  resource: text('resource'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+});
+
+/** Code d'autorisation à usage unique (5 min), conservé sous forme de hachage SHA-256 hexadécimal. */
+export const oauthCodes = pgTable('oauth_codes', {
+  codeHash: text('code_hash').primaryKey(),
+  clientId: oauthClientRef(),
+  userId: userRef(),
+  redirectUri: text('redirect_uri').notNull(),
+  codeChallenge: text('code_challenge').notNull(),
+  scope: text('scope').notNull(),
+  resource: text('resource'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+}, (t) => [index('oauth_codes_user_idx').on(t.userId)]);
+
+/** Paire jeton d'accès (1 h) / jeton de rafraîchissement (30 j), conservée sous forme de hachages SHA-256 hexadécimaux. */
+export const oauthTokens = pgTable('oauth_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  accessHash: text('access_hash').notNull().unique(),
+  refreshHash: text('refresh_hash').notNull().unique(),
+  clientId: oauthClientRef(),
+  userId: userRef(),
+  scope: text('scope').notNull(),
+  accessExpiresAt: timestamp('access_expires_at', { withTimezone: true }).notNull(),
+  refreshExpiresAt: timestamp('refresh_expires_at', { withTimezone: true }).notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+}, (t) => [index('oauth_tokens_user_idx').on(t.userId)]);

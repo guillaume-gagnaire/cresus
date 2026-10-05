@@ -16,6 +16,7 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@matreso/engine": "^0.1.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "@nestjs/common": "^12.1.2",
     "@nestjs/core": "^12.1.2",
     "@nestjs/platform-express": "^12.1.2",

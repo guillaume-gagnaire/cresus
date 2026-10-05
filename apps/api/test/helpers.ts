@@ -23,7 +23,7 @@ export async function setupTestApp(overrides: Record<string, string> = {}): Prom
 }
 
 export async function resetDb(app: NestExpressApplication): Promise<void> {
-  await app.get<Db>(DB).execute(sql`TRUNCATE users, sessions, passkeys, balance_snapshots, clients, rates, leaves, charges CASCADE`);
+  await app.get<Db>(DB).execute(sql`TRUNCATE users, sessions, passkeys, balance_snapshots, clients, rates, leaves, charges, oauth_clients, oauth_requests, oauth_codes, oauth_tokens CASCADE`);
 }
 
 /** Agent supertest qui conserve les cookies. */

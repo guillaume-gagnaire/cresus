@@ -6,6 +6,7 @@ import { type AppConfig, CONFIG } from './config.js';
 import { DataModule } from './data/data.module.js';
 import { DbModule } from './db/db.module.js';
 import { HealthController } from './health/health.controller.js';
+import { OAuthModule } from './oauth/oauth.module.js';
 import { SeedModule } from './seed/seed.module.js';
 
 @Module({})
@@ -20,13 +21,14 @@ export class AppModule {
         DbModule,
         AuthModule,
         DataModule,
+        OAuthModule,
         SeedModule,
-        // le front (build Nuxt) est servi avec repli SPA ; l'API (/api) n'est jamais interceptée
+        // le front (build Nuxt) est servi avec repli SPA ; l'API (/api), le MCP et les routes OAuth ne sont jamais interceptés
         ...(serveFront && config.webDist
           ? [
               ServeStaticModule.forRoot({
                 rootPath: config.webDist,
-                exclude: ['/api/{*path}'],
+                exclude: ['/api/{*path}', '/mcp', '/authorize', '/token', '/register', '/revoke', '/.well-known/{*path}'],
                 serveStaticOptions: {
                   setHeaders: (res, path) => {
                     if (/[\\/]_nuxt[\\/]/.test(path)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
