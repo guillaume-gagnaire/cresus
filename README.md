@@ -103,7 +103,7 @@ Ma Tréso embarque un serveur MCP (Streamable HTTP, sur `/mcp`) : Claude Code pe
 claude mcp add --transport http cresus https://cresus.gagnaire.dev/mcp
 ```
 
-Puis, dans Claude Code, ouvre `/mcp`, choisis `cresus` et clique sur « Authenticate ». Le navigateur s’ouvre sur l’écran de consentement de Ma Tréso (connecte-toi d’abord si besoin) : vérifie l’adresse vers laquelle tu seras renvoyé, puis clique sur « Autoriser ». Pour révoquer l’accès, déconnecte-toi de l’app MCP depuis Claude Code (`/mcp`).
+Puis, dans Claude Code, ouvre `/mcp`, choisis `cresus` et clique sur « Authenticate ». Le navigateur s’ouvre sur l’écran de consentement de Ma Tréso (connecte-toi d’abord si besoin) : vérifie l’adresse vers laquelle tu seras renvoyé, puis clique sur « Autoriser ». Pour révoquer l’accès, déconnecte-toi de l’app MCP depuis Claude Code (`/mcp`), ou, depuis Ma Tréso, utilise Profil › Sécurité › « Déconnecter les applications » (`POST /api/oauth/tokens/revoke-all`) : tous les accès accordés à des applications sont coupés. Changer de mot de passe fait la même chose.
 
 En développement (`npm run dev`), le même serveur répond sur `http://localhost:3000/mcp`.
 
