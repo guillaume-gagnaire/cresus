@@ -2,7 +2,7 @@ import { LEAVE_SCOPES } from '@matreso/engine';
 import { z } from 'zod';
 import { isoDate, signedCents } from '../common/schemas.js';
 import { chargeInputSchema } from './charges.service.js';
-import { clientFields, rateSchema } from './clients.service.js';
+import { clientFields, MAX_CLIENTS_PER_USER, MAX_RATES_PER_CLIENT, rateSchema } from './clients.service.js';
 import { profileFields } from './profile.service.js';
 
 export const exportFileSchema = z
@@ -18,10 +18,10 @@ export const exportFileSchema = z
           ...clientFields,
           ref: z.string().min(1),
           archived: z.boolean(),
-          rates: z.array(rateSchema).min(1).max(500),
+          rates: z.array(rateSchema).min(1).max(MAX_RATES_PER_CLIENT),
         }),
       )
-      .max(200),
+      .max(MAX_CLIENTS_PER_USER),
     leaves: z.array(z.object({ date: isoDate, scope: z.enum(LEAVE_SCOPES), clientRef: z.string().nullable() })).max(20_000),
     charges: z.array(chargeInputSchema).max(500),
   })
