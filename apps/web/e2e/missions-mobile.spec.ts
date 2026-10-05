@@ -164,3 +164,24 @@ test('goes back to the list from an unknown mission link', async ({ page }) => {
   await expect(page).toHaveURL(/\/clients$/);
   await expect(page.getByRole('heading', { name: 'Qui te fait vivre ?' })).toBeVisible();
 });
+
+test('names every month of the cash chart and draws it in the client colour on the full height', async ({ page }) => {
+  await freshAccount(page);
+  await page.goto('/clients');
+  await page.getByRole('link', { name: 'Modifier la mission Client A' }).click();
+  const chart = page.getByRole('img', { name: /^Encaissements de la mission/ });
+  await expect(chart).toBeVisible();
+  // L’image n’expose pas ses colonnes : sa description porte la valeur de chaque mois.
+  await expect(chart).toHaveAccessibleName(/octobre 2026 : 0\s€ encaissés ; novembre 2026 : 5\s850\s€ encaissés ; décembre 2026 : 5\s850\s€ encaissés/);
+  await expect(chart).toHaveAccessibleName(/mars 2027 : 11\s200\s€ encaissés/);
+  // Barres de la couleur du client (indigo), la plus haute prenant toute la hauteur (90 px de zone, 4 px de marge).
+  const bars = await chart.locator('.bar.pos').evaluateAll((els) => els.map((el) => ({ height: el.getBoundingClientRect().height, color: getComputedStyle(el).backgroundColor })));
+  expect(bars).toHaveLength(12);
+  expect(Math.max(...bars.map((b) => b.height))).toBe(86);
+  expect(bars.every((b) => b.color === 'rgb(75, 75, 224)')).toBe(true);
+  // Chez un autre client, la couleur change avec lui.
+  await page.getByRole('group', { name: 'Client', exact: true }).getByRole('button', { name: 'Client B' }).click();
+  await expect(page.getByLabel('Nom du client')).toHaveValue('Client B');
+  const orange = await page.getByRole('img', { name: /^Encaissements de la mission/ }).locator('.bar.pos').first().evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(orange).toBe('rgb(255, 138, 61)');
+});

@@ -106,7 +106,7 @@ const bannerSub = computed(() => [panel.value?.badge, panel.value?.billingMode =
             <h2 id="cash-title">Encaissements</h2>
             <span class="num cash-total">{{ clientCash.total }}</span>
           </div>
-          <MiniBars :bars="clientCash.bars" :height="90" readonly ariaLabel="Encaissements de la mission, mois par mois" />
+          <MiniBars :bars="clientCash.bars" :height="90" readonly unipolar :bar-color="color.base" ariaLabel="Encaissements de la mission, mois par mois" />
           <span class="sm">{{ clientCash.note }}</span>
         </section>
 

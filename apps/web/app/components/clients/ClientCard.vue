@@ -35,7 +35,7 @@ const payment = computed(() => `${props.row.term} · ${props.row.delay}`);
     <NuxtLink v-if="!pending" :to="`/clients/${row.id}`" class="open" :aria-label="link">
       Modifier la mission<AppIcon name="chevron-right" :size="18" />
     </NuxtLink>
-    <span v-else class="open is-pending" aria-disabled="true">Création en cours…</span>
+    <span v-else class="open is-pending">Création en cours…</span>
   </article>
 </template>
 

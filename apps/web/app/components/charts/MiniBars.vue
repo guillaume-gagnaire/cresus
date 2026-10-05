@@ -7,7 +7,11 @@
  * par défaut, 120 px dans Mobile-Conges.dc.html).
  * `highlight` (clés de mois) surligne ces mois : teinte + contour en tirets (jamais la couleur seule) et le composant
  * ajoute « (à cause des vacances) » (`highlightLabel`) au nom accessible du mois, ou à la description de l’image en
- * lecture seule.
+ * lecture seule. Cette description nomme toujours chaque mois (« … — octobre 2026 : 5 590 € ; novembre 2026 : … ») : les enfants
+ * d’une image ne sont pas exposés, la valeur de chaque barre doit donc tenir dans son nom.
+ * `barColor` colore les barres positives (couleur d’un client, par exemple) ; `unipolar` est pour des valeurs toutes positives
+ * (Mobile-Client.dc.html l. 94 à 96) : piste crème, barres arrondies qui partent du bas et se servent de toute la hauteur, ni
+ * demi-hauteur négative ni axe. Une valeur négative n’y est pas tracée. Sans ces deux options, rien ne change.
  */
 const props = withDefaults(
   defineProps<{
@@ -17,23 +21,29 @@ const props = withDefaults(
     height?: number;
     ariaLabel?: string;
     readonly?: boolean;
+    barColor?: string;
+    unipolar?: boolean;
   }>(),
-  { highlight: () => [], highlightLabel: 'à cause des vacances', height: 100, ariaLabel: 'Résultat de chaque mois', readonly: false },
+  { highlight: () => [], highlightLabel: 'à cause des vacances', height: 100, ariaLabel: 'Résultat de chaque mois', readonly: false, barColor: undefined, unipolar: false },
 );
 const emit = defineEmits<{ select: [index: number] }>();
 
-/** Axe de 1,5 px au milieu ; 3 px de marge en bout de demi-hauteur (49 → 46). */
-const reach = computed(() => Math.floor((props.height - 1.5) / 2) - 3);
-const peak = computed(() => Math.max(1, ...props.bars.map((b) => Math.abs(b.value))));
+/** Axe de 1,5 px au milieu ; 3 px de marge en bout de demi-hauteur (49 → 46). Unipolaire : toute la hauteur, moins 4 px de marge. */
+const reach = computed(() => (props.unipolar ? props.height - 4 : Math.floor((props.height - 1.5) / 2) - 3));
+const peak = computed(() => Math.max(1, ...props.bars.map((b) => (props.unipolar ? b.value : Math.abs(b.value)))));
 /** Une valeur non nulle garde au moins 2 px : un petit mois ne disparaît pas. */
 const px = (n: number): string => `${Math.max(2, Math.round((n / peak.value) * reach.value))}px`;
 
 const isLit = (key: string): boolean => props.highlight.includes(key);
 const nameOf = (bar: { key: string; aria: string }): string => (isLit(bar.key) ? `${bar.aria} (${props.highlightLabel})` : bar.aria);
-/** Image seule : les mois surlignés sont nommés dans la description, puisque les colonnes ne sont pas accessibles une à une. */
+/**
+ * Image seule : les colonnes ne sont pas accessibles une à une, la description nomme donc chaque mois, après les mois
+ * surlignés s’il y en a.
+ */
 const summary = computed(() => {
   const lit = props.bars.filter((b) => isLit(b.key));
-  return lit.length ? `${props.ariaLabel}. Mois ${props.highlightLabel} : ${lit.map((b) => b.aria).join(', ')}.` : props.ariaLabel;
+  const head = lit.length ? `${props.ariaLabel}. Mois ${props.highlightLabel} : ${lit.map((b) => b.aria).join(', ')}` : props.ariaLabel;
+  return props.bars.length ? `${head} — ${props.bars.map(nameOf).join(' ; ')}` : head;
 });
 </script>
 
@@ -53,10 +63,12 @@ const summary = computed(() => {
       v-bind="readonly ? {} : { type: 'button', 'aria-label': nameOf(bar), 'aria-pressed': bar.selected }"
       @click="!readonly && emit('select', i)"
     >
-      <span class="plot" :style="{ height: `${height}px` }" aria-hidden="true">
-        <span class="half up"><span class="bar pos" :style="{ height: bar.value > 0 ? px(bar.value) : '0px' }" /></span>
-        <span class="axis" />
-        <span class="half down"><span class="bar neg" :style="{ height: bar.value < 0 ? px(-bar.value) : '0px' }" /></span>
+      <span class="plot" :class="{ unipolar }" :style="{ height: `${height}px` }" aria-hidden="true">
+        <span class="half up"><span class="bar pos" :style="{ height: bar.value > 0 ? px(bar.value) : '0px', background: barColor }" /></span>
+        <template v-if="!unipolar">
+          <span class="axis" />
+          <span class="half down"><span class="bar neg" :style="{ height: bar.value < 0 ? px(-bar.value) : '0px' }" /></span>
+        </template>
       </span>
       <span class="letter" aria-hidden="true">{{ bar.label }}</span>
     </component>
@@ -79,5 +91,7 @@ const summary = computed(() => {
 .bar.pos { border-radius: 4px 4px 0 0; background: var(--bar-up); }
 .bar.neg { border-radius: 0 0 4px 4px; background: var(--bar-down); }
 .axis { height: 1.5px; background: var(--ink); }
+.plot.unipolar { border-radius: 8px; background: #FBF5EC; }
+.plot.unipolar .bar { width: 100%; border-radius: 8px; }
 .letter { font-size: 9px; font-weight: 700; color: var(--muted); }
 </style>
