@@ -61,7 +61,7 @@ docker run -p 3000:3000 \
   ma-treso
 ```
 
-Le fichier `docker-compose.yml` fournit un exemple complet (PostgreSQL 16 et l’application) : `docker compose up --build`, puis http://localhost:3000. Ses valeurs par défaut conviennent à un essai local, pas à la production.
+Le fichier `docker-compose.yml` fournit un exemple complet (PostgreSQL 16 et l’application) : `SESSION_SECRET=$(openssl rand -hex 32) docker compose up --build`, puis http://localhost:3000 (crée ton compte, ou passe `SEED_DEMO=true` pour le compte de démo). `SESSION_SECRET` est obligatoire (compose refuse de démarrer sans lui). Les autres valeurs par défaut conviennent à un essai local en http, pas à la production : `COOKIE_SECURE` reste à `false` pour que la connexion fonctionne en http, `SEED_DEMO` à `false`, et `PUBLIC_URL` à `http://localhost:3000`.
 
 ### Variables d’environnement
 
@@ -69,11 +69,11 @@ Le modèle est `.env.example`. « Défaut » est la valeur appliquée si la vari
 
 | Variable | Obligatoire | Défaut | Rôle |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | oui en production | `pglite:./.data/pglite` | `postgres://…` en production ; `pglite:<dossier>` (persistant) ou `pglite:memory` en dev et en tests. |
+| `DATABASE_URL` | **oui en production** (l’API refuse de démarrer sans) | `pglite:./.data/pglite` | `postgres://…` en production ; `pglite:<dossier>` (persistant) ou `pglite:memory` en dev et en tests. |
 | `SESSION_SECRET` | **oui en production** | secret de dev | Secret de signature des cookies (≥ 16 caractères) : long et aléatoire. L’API refuse de démarrer en production sans lui. |
 | `PUBLIC_URL` | **oui en production** | `http://localhost:3000` | Origine publique du site, sans chemin ni « / » final (ex. `https://cresus.example.com`) : émetteur OAuth, ressource MCP (`PUBLIC_URL/mcp`) et page de consentement. |
-| `WEBAUTHN_RP_ID` | à régler en production (non vérifié au démarrage) | `localhost` | Passkeys : domaine exact du site (sans schéma ni port). |
-| `WEBAUTHN_ORIGIN` | à régler en production (non vérifié au démarrage) | `http://localhost:3000` | Passkeys : origine exacte du site (`https://domaine`). |
+| `WEBAUTHN_RP_ID` | non | hors production `localhost` ; en production, le nom d’hôte de `PUBLIC_URL` | Passkeys : domaine exact du site (sans schéma ni port). Une valeur explicite l’emporte. |
+| `WEBAUTHN_ORIGIN` | non | hors production `http://localhost:3000` ; en production, l’origine de `PUBLIC_URL` | Passkeys : origine exacte du site (`https://domaine`). Une valeur explicite l’emporte. |
 | `WEBAUTHN_RP_NAME` | non | `Ma Tréso` | Nom affiché par le navigateur lors de l’enregistrement d’une passkey. |
 | `COOKIE_SECURE` | `true` derrière HTTPS | `true` si `NODE_ENV=production`, sinon `false` | Marque le cookie de session `Secure`. |
 | `SEED_DEMO` | non | `false` (`true` dans `.env.example`) | Crée le compte `demo@matreso.fr` au démarrage. À laisser à `false` en production. |
@@ -89,7 +89,8 @@ En production :
 
 - `SESSION_SECRET` : une valeur longue et aléatoire (`openssl rand -hex 32`).
 - `PUBLIC_URL` : l’origine publique réelle, avec `https://`. Les clients MCP et OAuth s’y fient pour retrouver l’émetteur et les routes.
-- `WEBAUTHN_RP_ID` : le domaine exact du site, et `WEBAUTHN_ORIGIN` : `https://domaine`. Une passkey n’est valable que pour ce couple.
+- `DATABASE_URL` : l’URL PostgreSQL ; sans elle l’API refuse de démarrer (elle utiliserait sinon une base locale éphémère).
+- `WEBAUTHN_RP_ID` et `WEBAUTHN_ORIGIN` : déduits de `PUBLIC_URL` si tu ne les renseignes pas (domaine et `https://domaine`). Une passkey n’est valable que pour ce couple : ne les change plus une fois des passkeys enregistrées.
 - `COOKIE_SECURE=true` derrière HTTPS. L’API suppose un seul proxy inverse devant elle (`trust proxy` à 1) pour lire l’IP du client.
 - `SEED_DEMO=false`, pour ne pas exposer un compte au mot de passe connu.
 - Le premier compte inscrit devient l’unique administrateur : sur un déploiement neuf, crée le tien avant de communiquer l’adresse.

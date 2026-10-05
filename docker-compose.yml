@@ -22,13 +22,16 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://matreso:matreso@db:5432/matreso
-      SESSION_SECRET: ${SESSION_SECRET:-change-me-change-me-change-me}
+      # obligatoire, sans valeur par défaut : une valeur connue de tous permettrait de forger les cookies de session (ex. SESSION_SECRET=$(openssl rand -hex 32) docker compose up)
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET requis}
       # origine publique du site, sans chemin ni « / » final : émetteur OAuth, ressource MCP (PUBLIC_URL + /mcp) et consentement
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
-      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-localhost}
-      WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-http://localhost:3000}
+      # passkeys : vides, ils sont déduits de PUBLIC_URL (domaine et origine) ; ne les renseigner que pour un cas particulier
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-}
+      WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-}
+      # false pour l'essai local en http (un cookie Secure n'y serait pas renvoyé) ; à passer à true derrière HTTPS
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      SEED_DEMO: ${SEED_DEMO:-true}
+      SEED_DEMO: ${SEED_DEMO:-false}
       SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-demo1234}
       AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-10}
       # entier ≥ 1 (jamais vide : le « :- » reprend la valeur par défaut si la variable est vide)
