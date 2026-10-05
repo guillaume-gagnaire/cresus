@@ -51,7 +51,9 @@ export function groupLeaves(input: Pick<EngineInput, 'clients' | 'leaves' | 'pro
   const byKey = new Map<string, Leave[]>();
   for (const leave of input.leaves) {
     const key = leave.scope === 'ALL' ? 'ALL' : `CLIENT:${leave.clientId}`;
-    byKey.set(key, [...(byKey.get(key) ?? []), leave]);
+    const list = byKey.get(key);
+    if (list) list.push(leave);
+    else byKey.set(key, [leave]);
   }
 
   const build = (key: string, list: Leave[]): LeavePeriod => {

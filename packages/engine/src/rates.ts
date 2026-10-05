@@ -5,14 +5,33 @@ export function sortRates(rates: readonly Rate[]): Rate[] {
   return [...rates].sort((a, b) => a.validFrom.localeCompare(b.validFrom));
 }
 
-/** Montant du tarif dont validFrom est le plus grand ≤ date, sinon 0 (SPEC §4.2). */
+/**
+ * Copie triée mémoïsée par tableau de tarifs (WeakMap : libérée avec le client).
+ * Hypothèse : un tableau de tarifs n'est pas modifié en place ; le store et l'API le remplacent. Un ajout ou un retrait en place
+ * (longueur différente) invalide quand même l'entrée.
+ */
+const sortedCache = new WeakMap<readonly Rate[], { length: number; sorted: readonly Rate[] }>();
+
+function sortedRatesOf(rates: readonly Rate[]): readonly Rate[] {
+  const hit = sortedCache.get(rates);
+  if (hit && hit.length === rates.length) return hit.sorted;
+  const sorted = sortRates(rates);
+  sortedCache.set(rates, { length: rates.length, sorted });
+  return sorted;
+}
+
+/** Montant du tarif dont validFrom est le plus grand ≤ date, sinon 0 (SPEC §4.2). Recherche dichotomique : O(log n) après le premier tri. */
 export function rateAt(client: Pick<Client, 'rates'>, date: ISODate): Cents {
-  let amount = 0;
-  for (const r of sortRates(client.rates)) {
-    if (r.validFrom > date) break;
-    amount = r.amount;
+  const sorted = sortedRatesOf(client.rates);
+  // Premier indice dont validFrom > date ; le tarif en vigueur est juste avant (à dates égales, le dernier déclaré l'emporte).
+  let lo = 0;
+  let hi = sorted.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (sorted[mid]!.validFrom <= date) lo = mid + 1;
+    else hi = mid;
   }
-  return amount;
+  return lo === 0 ? 0 : sorted[lo - 1]!.amount;
 }
 
 /** Tarif en vigueur aujourd'hui ; à défaut (tous futurs), le premier tarif. Sert à l'affichage « TJM actuel ». */

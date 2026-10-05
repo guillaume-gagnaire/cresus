@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { addDays } from '../src/dates';
 import { groupLeaves, leaveImpact, leavesCost, workingDaysBetween } from '../src/leaves';
 import { demoData, demoInput } from '../src/seed';
 import type { Leave } from '../src/types';
@@ -105,5 +106,20 @@ describe('groupLeaves', () => {
       cost: 65_000,
       leaveIds: ['x1'],
     });
+  });
+
+  it('groups 20 000 leaves (import cap) without quadratic copying', () => {
+    const leaves: Leave[] = [];
+    let d = '2000-01-03';
+    for (let i = 0; i < 20_000; i++) {
+      leaves.push({ id: `l${i}`, date: d, scope: i % 2 === 0 ? 'ALL' : 'CLIENT', clientId: i % 2 === 0 ? null : 'client-a' });
+      d = addDays(d, 1);
+    }
+    const t0 = Date.now();
+    const periods = groupLeaves(makeInput({ clients, leaves }));
+    const elapsed = Date.now() - t0;
+    expect(periods.length).toBeGreaterThan(0);
+    expect(periods.reduce((n, p) => n + p.dayCount, 0)).toBe(20_000);
+    expect(elapsed).toBeLessThan(5_000);
   });
 });

@@ -90,7 +90,8 @@ export function ceilingGauge(input: EngineInput, year: number, opts: { testMissi
   }
   const total = actual + planned;
   const pct = Math.round((total / params.microCeiling) * 100);
-  const level: GaugeLevel = overMonth ? 'OVER' : pct > 85 ? 'WARN' : 'OK';
+  // WARN dès que le total dépasse strictement 85 % du plafond (comparaison exacte en entiers, pas sur le pourcentage arrondi).
+  const level: GaugeLevel = overMonth ? 'OVER' : total * 100 > params.microCeiling * 85 ? 'WARN' : 'OK';
   return { year, actual, planned, total, ceiling: params.microCeiling, pct, level, overMonth, vatThreshold: params.vatThreshold, vatMonth };
 }
 

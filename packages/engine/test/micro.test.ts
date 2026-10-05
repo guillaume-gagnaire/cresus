@@ -61,6 +61,23 @@ describe('ceilingGauge', () => {
     expect(ceilingGauge(small, 2026).level).toBe('OK');
     expect(ceilingGauge(small, 2026).vatMonth).toBe('2026-12');
   });
+
+  it('warns as soon as the total exceeds 85 % of the ceiling, even when the rounded pct still reads 85', () => {
+    // 12 × 5 949,54 € = 71 394,48 € : 85,4 % du plafond de 83 600 € (pct arrondi à 85, mais strictement au-dessus de 85 %)
+    const edge = makeInput({ profile: microProfile, clients: [{ ...forfait, rates: [{ validFrom: '2026-01-01', amount: 594_954 }] }] });
+    const g = ceilingGauge(edge, 2026);
+    expect(g.total).toBe(7_139_448);
+    expect(g.pct).toBe(85);
+    expect(g.level).toBe('WARN');
+  });
+
+  it('stays OK when the total is at or under 85 % of the ceiling', () => {
+    // 12 × 5 920 € = 71 040 € : 84,98 % du plafond
+    const under = makeInput({ profile: microProfile, clients: [{ ...forfait, rates: [{ validFrom: '2026-01-01', amount: 592_000 }] }] });
+    const g = ceilingGauge(under, 2026);
+    expect(g.pct).toBe(85);
+    expect(g.level).toBe('OK');
+  });
 });
 
 describe('smoothedIncome', () => {
