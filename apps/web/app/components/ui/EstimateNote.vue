@@ -1,5 +1,5 @@
 <template>
-  <p class="sm note"><slot>{{ ESTIMATE_NOTE }}</slot></p>
+  <p class="sm note">{{ ESTIMATE_NOTE }}</p>
 </template>
 
 <style scoped>

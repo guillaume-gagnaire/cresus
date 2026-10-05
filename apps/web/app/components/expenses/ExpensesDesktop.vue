@@ -4,7 +4,7 @@
  * tableau des charges avec le formulaire d’ajout à côté. Les calculs viennent du moteur via `useExpensesView` ; ici, la mise en page.
  */
 const {
-  statuses, status, setStatus, statusHelp, net, setNet, previewNet, cost, comparison, microAlert, estimate, kpis, rows, note,
+  statuses, status, setStatus, statusHelp, net, setNet, previewNet, cost, comparison, microAlert, assumptions, kpis, rows, note,
   addCharge, updateAmount, removeCharge, deleting,
 } = useExpensesView();
 </script>
@@ -26,7 +26,7 @@ const {
       :cost="cost"
       :comparison="comparison"
       :micro-alert="microAlert"
-      :estimate="estimate"
+      :assumptions="assumptions"
       @update:status="setStatus"
       @preview="previewNet"
       @commit="setNet"

@@ -154,10 +154,31 @@ test.describe('desktop', () => {
     await expect(page.getByText(fr('5 400 €')).first()).toBeVisible();
     await expect(page.getByRole('row', { name: /Salaire \(net\)/ })).toContainText(fr('3 000 €'));
     await expect(page.getByRole('row', { name: /Cotisations sociales/ })).toContainText(fr('2 400 €'));
+    // Le total des charges suit : 5 400 € de rémunération + 1 819 € de charges saisies lissées = 7 219 €, arrondis à la dizaine.
+    await expect(page.getByTestId('kpi-average')).toContainText(fr('7 220 €'));
     await saved;
     await page.reload();
     await expect(page.getByLabel('Montant exact')).toHaveValue('3000');
     await expect(page.getByText(fr('5 400 €')).first()).toBeVisible();
+    await expect(page.getByTestId('kpi-average')).toContainText(fr('7 220 €'));
+  });
+
+  test('makes the average of the charges follow the legal status', async ({ page }) => {
+    await freshAccount(page);
+    await page.goto('/expenses');
+    await expect(page.getByTestId('kpi-average')).toContainText(fr('9 020 €'));
+    await page.getByRole('button', { name: 'EURL à l’IS' }).click();
+    // 5 800 € de rémunération + 1 819 € de charges saisies lissées = 7 619 €, arrondis à la dizaine.
+    await expect(page.getByTestId('kpi-average')).toContainText(fr('7 620 €'));
+    await expect(page.getByTestId('kpi-year')).toContainText(fr('91 430 €'));
+  });
+
+  test('ends the card with the exact estimate mention, then the assumptions on their own line', async ({ page }) => {
+    await freshAccount(page);
+    await page.goto('/expenses');
+    await expect(page.getByText('Estimation simplifiée, à affiner avec ton expert-comptable.', { exact: true })).toHaveCount(1);
+    await expect(page.getByText(/^Cotisations ≈ 80\s% du net en assimilé salarié, ≈ 45\s% en TNS, 26,1\s% du CA en micro/)).toBeVisible();
+    await expect(page.getByText('L’impôt sur le revenu n’est pas compté.', { exact: false })).toBeVisible();
   });
 
   test('moves the net pay with the slider and saves it when released', async ({ page }) => {
@@ -318,6 +339,28 @@ test.describe('mobile', () => {
     await expect(page.getByText(/\(≈ 45\s%\)/)).toBeVisible();
     const regimes = page.getByRole('group', { name: 'Le même net selon le régime' });
     await expect(regimes.locator('[aria-current="true"]')).toContainText('Indépendant (TNS)');
+    // Le total des charges suit : 5 800 € de rémunération + 1 819 € de charges saisies lissées = 7 619 €, arrondis à la dizaine.
+    await expect(page.getByRole('region', { name: 'Total des charges' })).toContainText(fr('7 620 €'));
+  });
+
+  test('ends the card with the exact estimate mention, then the short assumptions', async ({ page }) => {
+    await freshAccount(page);
+    await page.goto('/expenses');
+    await expect(page.getByText('Estimation simplifiée, à affiner avec ton expert-comptable.', { exact: true })).toHaveCount(1);
+    await expect(page.getByText('Impôt sur le revenu non compté.', { exact: true })).toBeVisible();
+  });
+
+  test('sets aria-controls on a charge line only while its editor is open', async ({ page }) => {
+    await freshAccount(page);
+    await page.goto('/expenses');
+    const toggle = page.getByRole('region', { name: 'Tes charges' }).getByRole('button', { name: /^Logiciels/ });
+    await expect(toggle).not.toHaveAttribute('aria-controls', /.*/);
+    await toggle.click();
+    const target = await toggle.getAttribute('aria-controls');
+    expect(target).toMatch(/^charge-/);
+    await expect(page.locator(`[id="${target}"]`)).toBeVisible();
+    await toggle.click();
+    await expect(toggle).not.toHaveAttribute('aria-controls', /.*/);
   });
 
   test('lists the computed lines read-only and the stored charges', async ({ page }) => {

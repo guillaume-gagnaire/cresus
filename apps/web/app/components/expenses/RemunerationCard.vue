@@ -16,7 +16,8 @@ const props = defineProps<{
   cost: CostView;
   comparison: readonly ComparisonView[];
   microAlert: { text: string; short: string } | null;
-  estimate: { long: string; short: string };
+  /** Détail des hypothèses, sous la mention d’estimation. */
+  assumptions: { long: string; short: string };
   compact?: boolean;
 }>();
 const emit = defineEmits<{ 'update:status': [value: LegalStatus | LegalStatus[]]; preview: [cents: number]; commit: [cents: number] }>();
@@ -110,7 +111,10 @@ const read = (e: Event): number => Math.round(Number((e.target as HTMLInputEleme
       </div>
     </div>
 
-    <EstimateNote>{{ compact ? estimate.short : estimate.long }}</EstimateNote>
+    <div class="estimate">
+      <EstimateNote />
+      <p class="sm assumptions">{{ compact ? assumptions.short : assumptions.long }}</p>
+    </div>
   </section>
 </template>
 
@@ -136,6 +140,9 @@ h2 { margin: 0; font-size: 26px; font-weight: 800; }
 .total-label { font-size: 15px; font-weight: 600; color: #CFC8E6; }
 .total-value { font-size: 28px; }
 .total-note { font-size: 13px; color: #CFC8E6; }
+
+.estimate { display: flex; flex-direction: column; gap: 4px; }
+.assumptions { margin: 0; }
 
 .alert { padding: 14px 18px; border-radius: 16px; background: var(--danger-bg); color: var(--danger-ink); font-weight: 600; }
 

@@ -7,7 +7,7 @@
 import type { ChargeInput } from '@matreso/engine';
 
 const {
-  statuses, status, setStatus, statusHelp, net, setNet, previewNet, cost, comparison, microAlert, estimate, rows, note,
+  statuses, status, setStatus, statusHelp, net, setNet, previewNet, cost, comparison, microAlert, assumptions, rows, note,
   periodMode, periodOptions, setPeriodMode, total, addCharge, updateAmount, removeCharge, deleting,
 } = useExpensesView();
 
@@ -46,7 +46,7 @@ async function onRemove(row: ChargeRowView): Promise<void> {
       :cost="cost"
       :comparison="comparison"
       :micro-alert="microAlert"
-      :estimate="estimate"
+      :assumptions="assumptions"
       @update:status="setStatus"
       @preview="previewNet"
       @commit="setNet"
@@ -75,7 +75,7 @@ async function onRemove(row: ChargeRowView): Promise<void> {
             <span class="num amount">{{ row.shown }}</span>
           </div>
           <template v-else>
-            <button type="button" class="row open" :aria-expanded="openId === row.id" :aria-controls="`charge-${row.id}`" :disabled="row.pending" @click="toggle(row.id)">
+            <button type="button" class="row open" :aria-expanded="openId === row.id" :aria-controls="openId === row.id ? `charge-${row.id}` : undefined" :disabled="row.pending" @click="toggle(row.id)">
               <span class="what">
                 <span class="tile" aria-hidden="true"><AppIcon :name="row.icon" :size="18" /></span>
                 <span class="text">

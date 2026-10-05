@@ -89,9 +89,6 @@ export interface FlashMessage {
   tone: 'ok' | 'info' | 'error';
 }
 
-/** Durée minimale pendant laquelle les corbeilles des périodes restent désactivées après une suppression. */
-const DELETE_LOCK_MS = 400;
-
 const isTemporary = (id: string | undefined): boolean => id?.startsWith('tmp-') ?? false;
 
 /** Couleurs des bandeaux (Calendrier.dc.html l. 270 à 280), reprises de STATE_STYLE sauf le jaune « délais de paiement ». */
@@ -124,7 +121,7 @@ export function useCalendarView() {
   const lastMessage = ref<FlashMessage | null>(null);
   const adding = ref(false);
   /** Une suppression de période est en cours : toutes les corbeilles attendent (R33). */
-  const deleting = ref(false);
+  const { locked: deleting, run: runDelete } = useDeleteLock();
   /** Jours dont un toucher est en cours d’enregistrement : un second toucher serait ignoré (R26). */
   const pendingDates = reactive(new Set<ISODate>());
 
@@ -267,20 +264,11 @@ export function useCalendarView() {
     });
   });
 
-  /**
-   * Supprime une période, puis garde toutes les corbeilles désactivées jusqu’à la fin de l’appel ET pendant au moins
-   * `DELETE_LOCK_MS` : la suppression est optimiste et revient presque aussitôt, mais la liste se resserre tout de suite, et le
-   * second clic d’un double appui tomberait sur la corbeille de la période suivante, remontée à sa place (R33).
-   */
+  /** Supprime une période ; les corbeilles restent désactivées le temps du verrou (`useDeleteLock`, R33). */
   async function deletePeriod(period: PeriodView): Promise<void> {
     if (period.pending || deleting.value) return;
-    deleting.value = true;
     lastMessage.value = null;
-    try {
-      await Promise.all([treso.deleteLeaves(period.leaveIds), new Promise<void>((resolve) => setTimeout(resolve, DELETE_LOCK_MS))]);
-    } finally {
-      deleting.value = false;
-    }
+    await runDelete(() => treso.deleteLeaves(period.leaveIds));
   }
 
   /** « Ajouter et simuler » : la période est posée chez `who`, le message dit ce qu’elle coûte, le calendrier saute à son premier mois. */

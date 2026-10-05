@@ -60,9 +60,6 @@ export interface ChargeRowView {
   deleteLabel: string;
 }
 
-/** Durée minimale pendant laquelle les corbeilles restent désactivées après une suppression (comme les périodes de congés, R33). */
-const DELETE_LOCK_MS = 400;
-
 const isTemporary = (id: string): boolean => id.startsWith('tmp-');
 
 const STATUS_HELP: Readonly<Record<Exclude<LegalStatus, 'MICRO'>, string>> = {
@@ -171,12 +168,15 @@ export function useExpensesView() {
     };
   });
 
-  /** Estimation du bas de la carte : les taux sont ceux de l’année (Charges.dc.html l. 93, Mobile-Charges.dc.html l. 70). */
-  const estimate = computed(() => {
+  /**
+   * Détail des hypothèses sous la mention d’estimation (Charges.dc.html l. 93, Mobile-Charges.dc.html l. 70) : les taux sont ceux
+   * de l’année. La mention elle-même (« Estimation simplifiée, à affiner avec ton expert-comptable. ») est celle de `EstimateNote`.
+   */
+  const assumptions = computed(() => {
     const p = params.value;
     return {
-      long: `Estimation simplifiée : cotisations ≈ ${percent((p.salarieCoef - 1) * 100)} du net en assimilé salarié, ≈ ${percent((p.tnsCoef - 1) * 100)} en TNS, ${percent(p.microContributionRate * 100)} du CA en micro (prestations de services). L’impôt sur le revenu n’est pas compté. À affiner avec ton expert-comptable.`,
-      short: 'Estimation simplifiée, impôt sur le revenu non compté.',
+      long: `Cotisations ≈ ${percent((p.salarieCoef - 1) * 100)} du net en assimilé salarié, ≈ ${percent((p.tnsCoef - 1) * 100)} en TNS, ${percent(p.microContributionRate * 100)} du CA en micro (prestations de services). L’impôt sur le revenu n’est pas compté.`,
+      short: 'Impôt sur le revenu non compté.',
     };
   });
 
@@ -252,19 +252,14 @@ export function useExpensesView() {
   }
 
   /** Une suppression est en cours : toutes les corbeilles attendent (le double appui viserait sinon la ligne qui vient de remonter, R33). */
-  const deleting = ref(false);
+  const { locked: deleting, run: runDelete } = useDeleteLock();
   async function removeCharge(row: ChargeRowView): Promise<void> {
-    if (row.computed || row.pending || deleting.value) return;
-    deleting.value = true;
-    try {
-      await Promise.all([treso.deleteCharge(row.id), new Promise<void>((resolve) => setTimeout(resolve, DELETE_LOCK_MS))]);
-    } finally {
-      deleting.value = false;
-    }
+    if (row.computed || row.pending) return;
+    await runDelete(() => treso.deleteCharge(row.id));
   }
 
   return {
-    statuses, status, setStatus, statusHelp, net, setNet, previewNet, cost, comparison, microAlert, estimate,
+    statuses, status, setStatus, statusHelp, net, setNet, previewNet, cost, comparison, microAlert, assumptions,
     kpis, rows, note, periodMode, periodOptions, setPeriodMode, total,
     addCharge, updateAmount, removeCharge, deleting,
   };
