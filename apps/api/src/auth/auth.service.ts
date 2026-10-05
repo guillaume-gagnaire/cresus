@@ -6,6 +6,7 @@ import { uniqueViolation } from '../common/pg-errors.js';
 import { DB, type Db } from '../db/db.module.js';
 import { passkeys, users } from '../db/schema.js';
 import { toProfileDto } from '../data/mappers.js';
+import { revokeAllOAuthAccess } from '../oauth/oauth.store.js';
 import { hashPassword, verifyPassword } from './password.js';
 
 /** Nom de l'index unique partiel qui garantit un seul ADMIN (cf. db/schema.ts). */
@@ -63,7 +64,12 @@ export class AuthService {
   async changePassword(userId: string, current: string, next: string): Promise<void> {
     const [user] = await this.db.select().from(users).where(eq(users.id, userId));
     if (!user || !(await verifyPassword(user.passwordHash, current))) throw new AppError(401, 'INVALID_CREDENTIALS', 'Mot de passe actuel incorrect.');
-    await this.db.update(users).set({ passwordHash: await hashPassword(next) }).where(eq(users.id, userId));
+    const passwordHash = await hashPassword(next);
+    // un mot de passe changé après une compromission doit aussi couper l'accès des applications connectées (Claude Code…) : même transaction
+    await this.db.transaction(async (tx) => {
+      await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
+      await revokeAllOAuthAccess(tx, userId);
+    });
   }
 
   async checkPassword(userId: string, password: string): Promise<void> {

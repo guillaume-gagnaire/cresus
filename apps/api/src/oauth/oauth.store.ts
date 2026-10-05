@@ -32,6 +32,21 @@ const newSecret = (): string => randomBytes(32).toString('base64url');
 /** Seuls ces hachages SHA-256 (hexadécimal) sont stockés : un secret en clair ne touche jamais la base. */
 export const hashSecret = (secret: string): string => createHash('sha256').update(secret).digest('hex');
 
+/**
+ * Coupe l'accès de toutes les applications de l'utilisateur (Claude Code…) : jetons actifs révoqués, codes d'autorisation
+ * encore valides supprimés (un code émis avant l'appel ne doit pas pouvoir être échangé après). Renvoie le nombre de jetons révoqués.
+ * Fonction libre pour que le changement de mot de passe (AuthService) l'exécute dans sa propre transaction.
+ */
+export async function revokeAllOAuthAccess(db: Db, userId: string): Promise<number> {
+  const revoked = await db
+    .update(oauthTokens)
+    .set({ revokedAt: new Date() })
+    .where(and(eq(oauthTokens.userId, userId), isNull(oauthTokens.revokedAt)))
+    .returning({ id: oauthTokens.id });
+  await db.delete(oauthCodes).where(eq(oauthCodes.userId, userId));
+  return revoked.length;
+}
+
 export interface PendingRequest {
   clientName: string;
   redirectUri: string;
@@ -234,6 +249,11 @@ export class OAuthStore implements OAuthRegisteredClientsStore {
       .where(and(eq(oauthTokens.codeHash, hashSecret(code)), isNull(oauthTokens.revokedAt)))
       .returning({ id: oauthTokens.id });
     return revoked.length;
+  }
+
+  /** « Déconnecter les applications » : révoque tous les jetons de l'utilisateur, quel que soit le client. */
+  revokeAllForUser(userId: string): Promise<number> {
+    return revokeAllOAuthAccess(this.db, userId);
   }
 
   async findAccessToken(token: string): Promise<AccessTokenRecord | null> {

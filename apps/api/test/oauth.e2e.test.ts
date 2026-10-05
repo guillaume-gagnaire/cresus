@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { InvalidTokenError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { Logger } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { eq } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AppConfig, CONFIG, loadConfig } from '../src/config.js';
@@ -492,6 +492,77 @@ describe('OAuth 2.1 authorization server', () => {
     await agent.delete('/api/account').send({ password: creds.password }).expect(204);
     expect(await db.select().from(oauthTokens)).toHaveLength(0);
     expect(await db.select().from(oauthCodes)).toHaveLength(0);
+  });
+
+  describe('cutting the access of connected applications', () => {
+    const MCP_HEADERS = { Accept: 'application/json, text/event-stream' };
+    const initialize = { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'e2e', version: '1.0.0' } } };
+    const mcpStatus = async (token: string) => (await http().post('/mcp').set(MCP_HEADERS).set('Authorization', `Bearer ${token}`).send(initialize)).status;
+
+    it('POST /api/oauth/tokens/revoke-all requires a session and a JSON body', async () => {
+      const { agent, tokens } = await fullFlow();
+      await http().post('/api/oauth/tokens/revoke-all').send({}).expect(401);
+      await agent.post('/api/oauth/tokens/revoke-all').type('form').send({ a: '1' }).expect(415);
+      expect(await mcpStatus(tokens.access_token)).toBe(200);
+    });
+
+    it('revokes every token of the user (access and refresh), and only theirs', async () => {
+      const { agent, clientId, tokens } = await fullFlow();
+      // un second jeton (autre application) du même utilisateur, et une paire rafraîchie
+      const second = await (async () => {
+        const otherClient = await registerClient();
+        const { verifier, challenge } = pkce();
+        const code = await obtainCode(agent, otherClient, challenge);
+        return (await exchangeCode(otherClient, code, verifier).expect(200)).body as { access_token: string; refresh_token: string };
+      })();
+      const stranger = await fullFlow('stranger@example.com');
+      expect(await mcpStatus(tokens.access_token)).toBe(200);
+      expect(await mcpStatus(second.access_token)).toBe(200);
+
+      const res = await agent.post('/api/oauth/tokens/revoke-all').send({}).expect(200);
+      expect(res.body).toEqual({ revoked: 2 });
+
+      expect(await mcpStatus(tokens.access_token)).toBe(401);
+      expect(await mcpStatus(second.access_token)).toBe(401);
+      expect((await tokenRequest({ grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: clientId }).expect(400)).body.error).toBe('invalid_grant');
+      // les jetons d'un autre utilisateur ne sont pas touchés
+      expect(await mcpStatus(stranger.tokens.access_token)).toBe(200);
+      expect(await db.select().from(oauthTokens).where(isNull(oauthTokens.revokedAt))).toHaveLength(1);
+      // idempotent
+      expect((await agent.post('/api/oauth/tokens/revoke-all').send({}).expect(200)).body).toEqual({ revoked: 0 });
+      // la session web, elle, reste ouverte, et une nouvelle autorisation reste possible
+      await agent.get('/api/auth/me').expect(200);
+      const again = await (async () => {
+        const { verifier, challenge } = pkce();
+        const code = await obtainCode(agent, clientId, challenge);
+        return (await exchangeCode(clientId, code, verifier).expect(200)).body as { access_token: string };
+      })();
+      expect(await mcpStatus(again.access_token)).toBe(200);
+    });
+
+    it('also drops the authorization codes that were issued but not yet exchanged', async () => {
+      const agent = await newUser();
+      const clientId = await registerClient();
+      const { verifier, challenge } = pkce();
+      const code = await obtainCode(agent, clientId, challenge);
+      await agent.post('/api/oauth/tokens/revoke-all').send({}).expect(200);
+      expect(await db.select().from(oauthCodes)).toHaveLength(0);
+      expect((await exchangeCode(clientId, code, verifier).expect(400)).body.error).toBe('invalid_grant');
+    });
+
+    it('is triggered by a password change, which keeps the current session but cuts the applications', async () => {
+      const { agent, tokens } = await fullFlow();
+      expect(await mcpStatus(tokens.access_token)).toBe(200);
+      await agent.patch('/api/auth/password').send({ currentPassword: creds.password, newPassword: 'nouveau-mdp' }).expect(204);
+      expect(await mcpStatus(tokens.access_token)).toBe(401);
+      await agent.get('/api/auth/me').expect(200);
+    });
+
+    it('leaves the tokens alone when the password change is refused', async () => {
+      const { agent, tokens } = await fullFlow();
+      await agent.patch('/api/auth/password').send({ currentPassword: 'faux-faux', newPassword: 'nouveau-mdp' }).expect(401);
+      expect(await mcpStatus(tokens.access_token)).toBe(200);
+    });
   });
 
   it('only accepts the MCP endpoint as the RFC 8707 resource, and records it', async () => {
