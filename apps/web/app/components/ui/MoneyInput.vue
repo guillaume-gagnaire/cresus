@@ -3,7 +3,7 @@
  * Montant saisi en euros, exposé en centimes (`null` = champ vide).
  * `type="text" inputmode="decimal"` plutôt que `type="number"` pour accepter la virgule française.
  */
-const props = withDefaults(defineProps<{ label: string; min?: number; max?: number; step?: number; hideLabel?: boolean }>(), { step: 1 });
+const props = withDefaults(defineProps<{ label: string; min?: number; max?: number; step?: number; hideLabel?: boolean; disabled?: boolean }>(), { step: 1 });
 const model = defineModel<number | null>({ required: true });
 
 const toText = (cents: number | null): string => (cents === null ? '' : String(cents / 100).replace('.', ','));
@@ -45,6 +45,7 @@ function nudge(direction: 1 | -1): void {
         inputmode="decimal"
         autocomplete="off"
         :aria-label="label"
+        :disabled="disabled"
         @change="commit"
         @blur="commit"
         @keydown.enter="commit"
@@ -59,5 +60,6 @@ function nudge(direction: 1 | -1): void {
 <style scoped>
 .wrap { position: relative; display: flex; }
 .wrap input { flex: 1; padding-right: 36px; min-width: 0; }
+.wrap input:disabled { opacity: .6; cursor: not-allowed; }
 .suffix { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 600; }
 </style>

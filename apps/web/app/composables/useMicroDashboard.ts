@@ -5,9 +5,6 @@ export type MicroSetAside = NonNullable<ReturnType<typeof useMicroDashboard>['se
 /** Jauge du plafond de CA de l’année choisie, déjà formatée (`level` et couleurs viennent du moteur). */
 export type MicroGauge = NonNullable<ReturnType<typeof useMicroDashboard>['gauge']['value']>;
 
-/** « 26,1 % » : pourcentage (26,1), espace insécable avant le signe. Un taux du moteur (0,261) passe par `percent(rate * 100)`. */
-const percent = (value: number): string => `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}\u00A0%`;
-
 export function useMicroDashboard() {
   const treso = useTresoStore();
   const index = ref(0);

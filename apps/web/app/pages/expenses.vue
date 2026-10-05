@@ -1,7 +1,9 @@
-<template>
-  <h1>Tes charges</h1>
-</template>
+<script setup lang="ts">
+/** `/expenses` : sur desktop, la page complète ; sur mobile, la liste. */
+const { isDesktop } = useBreakpoint();
+</script>
 
-<style scoped>
-h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.02em; }
-</style>
+<template>
+  <ExpensesDesktop v-if="isDesktop" />
+  <ExpensesMobile v-else />
+</template>

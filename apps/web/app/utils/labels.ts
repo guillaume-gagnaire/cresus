@@ -17,3 +17,6 @@ export function clientLetter(name: string): string {
 }
 
 export const ESTIMATE_NOTE = 'Estimation simplifiée, à affiner avec ton expert-comptable.';
+
+/** « 26,1 % » : pourcentage (26,1), espace insécable avant le signe. Un taux du moteur (0,261) passe par `percent(rate * 100)`. */
+export const percent = (value: number): string => `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}\u00A0%`;
