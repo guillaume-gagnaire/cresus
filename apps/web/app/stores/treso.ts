@@ -9,11 +9,18 @@ import { defineStore } from 'pinia';
 type ChargeDto = StateDto['charges'][number];
 const LAST_COMPANY_STATUS = 'matreso:lastCompanyStatus';
 const tmpId = () => `tmp-${crypto.randomUUID()}`;
+/** Au-delà, les données affichées sont rechargées quand l’app revient au premier plan (PWA reprise après une longue veille). */
+const STALE_AFTER_MS = 5 * 60_000;
+/** Laisse au navigateur (Safari iOS surtout) le temps de démarrer le téléchargement avant de libérer l’URL du blob. */
+const REVOKE_DELAY_MS = 1000;
 
 export const useTresoStore = defineStore('treso', () => {
   const data = ref<StateDto | null>(null);
   const today = ref<ISODate>(localToday());
   const status = ref<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  /** Heure (ms) du dernier chargement réussi de l’état : sert à décider d’un rafraîchissement à la reprise. */
+  const loadedAt = ref(0);
+  let refreshing = false;
   const toast = useToast();
 
   const input = computed<EngineInput | null>(() =>
@@ -35,6 +42,7 @@ export const useTresoStore = defineStore('treso', () => {
   function reset(): void {
     data.value = null;
     status.value = 'idle';
+    loadedAt.value = 0;
   }
 
   /** Session expirée en cours d’usage (R22) : on vide les deux stores et on renvoie vers /login, sans recharger. */
@@ -58,17 +66,40 @@ export const useTresoStore = defineStore('treso', () => {
     return false;
   }
 
-  async function load(): Promise<void> {
+  /**
+   * Charge l’état depuis le serveur ; renvoie true s’il a réussi. `quiet` : un échec (réseau, serveur) n’affiche aucun message
+   * (rafraîchissement de rattrapage ou à la reprise) ; une session expirée, elle, est toujours signalée.
+   */
+  async function load(opts: { quiet?: boolean } = {}): Promise<boolean> {
     // Un rechargement de rattrapage garde l’écran en place : seul le tout premier chargement passe par « loading ».
     const refresh = data.value !== null;
     if (!refresh) status.value = 'loading';
     try {
       data.value = await api<StateDto>('/state');
       today.value = localToday();
+      loadedAt.value = Date.now();
       status.value = 'ready';
+      return true;
     } catch (e) {
       if (!refresh) status.value = 'error';
+      if (opts.quiet && !(e instanceof ApiError && e.status === 401)) return false;
       fail(e, 'Impossible de charger tes données.');
+      return false;
+    }
+  }
+
+  /**
+   * Reprise de l’app (retour au premier plan, focus) : un jour a passé (« aujourd’hui » et le mois affichés seraient faux) ou
+   * les données ont plus de 5 minutes → rechargement discret, l’écran reste en place et un échec réseau ne dit rien.
+   */
+  async function refreshIfStale(now: number = Date.now()): Promise<void> {
+    if (status.value !== 'ready' || refreshing) return;
+    if (localToday() === today.value && now - loadedAt.value < STALE_AFTER_MS) return;
+    refreshing = true;
+    try {
+      await load({ quiet: true });
+    } finally {
+      refreshing = false;
     }
   }
 
@@ -76,16 +107,22 @@ export const useTresoStore = defineStore('treso', () => {
     if (status.value === 'idle' || status.value === 'error') await load();
   }
 
-  /** Applique localement, appelle l'API, réconcilie ; en cas d'échec : message, puis rechargement depuis le serveur (sauf session expirée). */
+  /**
+   * Applique localement, appelle l'API, réconcilie ; en cas d'échec : message, puis rechargement depuis le serveur (sauf session expirée).
+   * Hors ligne le rechargement échoue lui aussi : on restaure alors l'état d'avant la modification, qui sinon resterait affichée
+   * comme si elle avait été enregistrée.
+   */
   async function mutate<T>(apply: (s: StateDto) => void, call: () => Promise<T>, reconcile?: (s: StateDto, res: T) => void): Promise<T | null> {
     if (!data.value) return null;
+    // toRaw : structuredClone ne sait pas copier un proxy réactif ; le brut ne contient que des données simples
+    const snapshot = structuredClone(toRaw(data.value));
     apply(data.value);
     try {
       const res = await call();
       if (reconcile && data.value) reconcile(data.value, res);
       return res;
     } catch (e) {
-      if (!fail(e, 'Impossible d’enregistrer. Réessaie.')) await load();
+      if (!fail(e, 'Impossible d’enregistrer. Réessaie.') && !(await load({ quiet: true })) && data.value) data.value = snapshot;
       return null;
     }
   }
@@ -245,7 +282,8 @@ export const useTresoStore = defineStore('treso', () => {
     a.href = URL.createObjectURL(blob);
     a.download = `ma-treso-${localToday()}.json`;
     a.click();
-    URL.revokeObjectURL(a.href);
+    // Safari iOS lit le blob après le retour de click() : libérer l’URL tout de suite annulerait le téléchargement
+    setTimeout(() => URL.revokeObjectURL(a.href), REVOKE_DELAY_MS);
   }
 
   async function importData(file: File): Promise<boolean> {
@@ -269,7 +307,7 @@ export const useTresoStore = defineStore('treso', () => {
 
   return {
     data, today, status, input, profile, allClients, clients, clientById, isMicro, results, summary, leavePeriods, currentMonth, balance,
-    load, ensureLoaded, reset, updateProfile, setCompanyMode, setBalance, createClient, updateClient, deleteClient, addRate, deleteRate,
+    load, loadedAt, refreshIfStale, ensureLoaded, reset, updateProfile, setCompanyMode, setBalance, createClient, updateClient, deleteClient, addRate, deleteRate,
     addLeaves, deleteLeaves, toggleLeave, cycleWeekday, addCharge, updateCharge, deleteCharge, exportData, importData,
   };
 });

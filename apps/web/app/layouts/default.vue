@@ -3,9 +3,24 @@ const { isDesktop } = useBreakpoint();
 const treso = useTresoStore();
 const exposeStore = import.meta.dev || useRuntimeConfig().public.e2e;
 
+/**
+ * PWA reprise après une veille (ou onglet qui retrouve le focus) : « aujourd’hui » et les données peuvent avoir vieilli.
+ * Le store décide s’il faut recharger (jour changé ou données de plus de 5 minutes) ; le rafraîchissement est discret.
+ */
+function onResume(): void {
+  if (document.visibilityState === 'visible') void treso.refreshIfStale();
+}
+
 onMounted(() => {
   if (exposeStore) (window as unknown as { __treso: typeof treso }).__treso = treso;
   void treso.ensureLoaded();
+  document.addEventListener('visibilitychange', onResume);
+  window.addEventListener('focus', onResume);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', onResume);
+  window.removeEventListener('focus', onResume);
 });
 </script>
 

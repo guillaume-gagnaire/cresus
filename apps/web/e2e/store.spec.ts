@@ -8,6 +8,8 @@ interface TresoWindow {
     results: Array<{ result: number; balance: number }>;
     balance: { amount: number; date: string } | null;
     data: { leaves: unknown[]; charges: Array<{ id: string; name: string }> };
+    today: string;
+    loadedAt: number;
     addLeaves: (input: unknown) => Promise<unknown>;
     setBalance: (amount: number) => Promise<unknown>;
     addCharge: (input: unknown) => Promise<unknown>;
@@ -95,4 +97,122 @@ test('sends the user back to the login screen when the session has expired', asy
   await expect(page.getByRole('status')).toContainText('Ta session a expiré, reconnecte-toi.');
   const data = await page.evaluate(() => (window as unknown as TresoWindow).__treso.data);
   expect(data).toBeNull();
+});
+
+// Revue finale : modification optimiste annulée hors ligne, rafraîchissement à la reprise de la PWA.
+
+const NEW_CHARGE = { name: 'Abonnement e2e', amount: 4_500, frequency: 'MONTHLY', month: null, category: null };
+
+test('rolls an optimistic edit back when the save fails and the reload fails too (offline)', async ({ page }) => {
+  await freshAccount(page);
+  await treso(page);
+  await page.route('**/api/charges', (route) => route.abort());
+  await page.route('**/api/state', (route) => route.abort());
+  const outcome = await page.evaluate(async (charge) => {
+    const store = (window as unknown as TresoWindow).__treso;
+    const before = store.data.charges.map((c) => c.name);
+    const pending = store.addCharge(charge); // la charge est ajoutée tout de suite, avant la réponse
+    const optimistic = store.data.charges.map((c) => c.name);
+    const res = await pending;
+    return { res, before, optimistic, after: store.data.charges.map((c) => c.name), status: store.status };
+  }, NEW_CHARGE);
+  expect(outcome.optimistic).toEqual([...outcome.before, 'Abonnement e2e']);
+  expect(outcome.res).toBeNull();
+  expect(outcome.after).toEqual(outcome.before);
+  expect(outcome.status).toBe('ready');
+  // un seul message : l’échec de l’enregistrement, pas un second « Impossible de charger tes données »
+  await expect(page.locator('.toast')).toHaveCount(1);
+  await expect(page.locator('.toast')).toHaveText('Connexion impossible. Vérifie ton réseau.');
+  // et l’écran n’affiche plus la charge (navigation dans l’app : un rechargement de page échouerait hors ligne)
+  await page.getByRole('navigation', { name: 'Navigation principale' }).getByRole('link', { name: 'Charges' }).click();
+  await expect(page).toHaveURL(/\/expenses$/);
+  await expect(page.getByText('Abonnement e2e')).toHaveCount(0);
+  await expect(page.getByText('Assurance RC Pro').first()).toBeVisible(); // les charges de démo, elles, sont bien là
+});
+
+test('keeps the server state (not the snapshot) when the save fails but the reload succeeds', async ({ page }) => {
+  await freshAccount(page);
+  await treso(page);
+  await page.route('**/api/charges', (route) => route.abort());
+  // une autre session a ajouté une charge entre-temps : le rechargement la ramène
+  await page.request.post('/api/charges', { data: { name: 'Ajoutée ailleurs', amount: 1_000, frequency: 'MONTHLY', month: null, category: null } });
+  const after = await page.evaluate(async (charge) => {
+    const store = (window as unknown as TresoWindow).__treso;
+    await store.addCharge(charge);
+    return store.data.charges.map((c) => c.name);
+  }, NEW_CHARGE);
+  expect(after).toContain('Ajoutée ailleurs');
+  expect(after).not.toContain('Abonnement e2e');
+});
+
+test.describe('resuming the app', () => {
+  const stateRequests = (page: Page): string[] => {
+    const seen: string[] = [];
+    page.on('request', (r) => { if (r.url().endsWith('/api/state')) seen.push(r.url()); });
+    return seen;
+  };
+  const resume = (page: Page, event: 'visibilitychange' | 'focus') =>
+    page.evaluate((name) => (name === 'focus' ? window : document).dispatchEvent(new Event(name)), event);
+
+  test('refreshes “today” and the projection when the day changed while the app slept', async ({ page }) => {
+    await freshAccount(page);
+    await treso(page);
+    await expect(page.getByText('octobre 2026').first()).toBeVisible();
+    await page.clock.setFixedTime(new Date('2026-11-02T08:30:00'));
+    await resume(page, 'visibilitychange');
+    await expect(page.getByText('novembre 2026').first()).toBeVisible();
+    expect(await page.evaluate(() => (window as unknown as TresoWindow).__treso.today)).toBe('2026-11-02');
+  });
+
+  test('also refreshes when the window regains focus', async ({ page }) => {
+    await freshAccount(page);
+    await treso(page);
+    await page.clock.setFixedTime(new Date('2026-11-02T08:30:00'));
+    await resume(page, 'focus');
+    await expect(page.getByText('novembre 2026').first()).toBeVisible();
+  });
+
+  test('reloads data older than 5 minutes, but not fresh data of the same day', async ({ page }) => {
+    await freshAccount(page);
+    await treso(page);
+    const seen = stateRequests(page);
+    await page.clock.setFixedTime(new Date('2026-10-04T10:04:00')); // 4 minutes : rien à faire
+    await resume(page, 'visibilitychange');
+    await resume(page, 'focus');
+    await page.waitForTimeout(500);
+    expect(seen).toHaveLength(0);
+    const refreshed = page.waitForResponse((r) => r.url().endsWith('/api/state'));
+    await page.clock.setFixedTime(new Date('2026-10-04T10:06:00')); // 6 minutes
+    await resume(page, 'visibilitychange');
+    expect((await refreshed).status()).toBe(200);
+    // une fois rechargées, les données sont de nouveau fraîches
+    await expect.poll(() => page.evaluate(() => (window as unknown as TresoWindow).__treso.loadedAt)).toBe(new Date('2026-10-04T10:06:00').getTime());
+    const before = seen.length;
+    await resume(page, 'visibilitychange');
+    await page.waitForTimeout(500);
+    expect(seen).toHaveLength(before);
+  });
+
+  test('does not refresh while the page is hidden, and stays silent when the network is down', async ({ page }) => {
+    await freshAccount(page);
+    await treso(page);
+    const seen = stateRequests(page);
+    await page.clock.setFixedTime(new Date('2026-11-02T08:30:00'));
+    await page.evaluate(() => Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }));
+    await resume(page, 'visibilitychange');
+    await page.waitForTimeout(500);
+    expect(seen).toHaveLength(0);
+    // de retour au premier plan, mais hors ligne : l’écran reste en place, sans message d’erreur
+    await page.route('**/api/state', (route) => route.abort());
+    await page.evaluate(() => Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true }));
+    await resume(page, 'visibilitychange');
+    await expect.poll(() => seen.length).toBe(1);
+    await page.waitForTimeout(300);
+    await expect(page.locator('.toast')).toHaveCount(0);
+    await expect(page.getByText('octobre 2026').first()).toBeVisible();
+    // le réseau revient : la reprise suivante rattrape
+    await page.unroute('**/api/state');
+    await resume(page, 'focus');
+    await expect(page.getByText('novembre 2026').first()).toBeVisible();
+  });
 });
