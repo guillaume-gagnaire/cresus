@@ -2,9 +2,9 @@
 /**
  * Périodes de vacances posées (Calendrier.dc.html l. 98 à 110, Mobile-Conges.dc.html l. 88 à 91) : dates, nombre de jours et
  * client, ce que ça coûte, et les mois où ça se voit. La corbeille supprime toute la période ; elle attend (désactivée) tant
- * qu’un congé de la période n’est pas confirmé par le serveur (R26). `compact` (mobile) met le coût sur la ligne du client.
+ * qu’un congé de la période n’est pas confirmé par le serveur (R26), et toutes attendent pendant une suppression (`busy`, R33). `compact` (mobile) met le coût sur la ligne du client.
  */
-defineProps<{ periods: PeriodView[]; compact?: boolean }>();
+defineProps<{ periods: PeriodView[]; compact?: boolean; /** Une suppression est en cours : toutes les corbeilles attendent (R33). */ busy?: boolean }>();
 const emit = defineEmits<{ remove: [period: PeriodView] }>();
 </script>
 
@@ -25,7 +25,7 @@ const emit = defineEmits<{ remove: [period: PeriodView] }>();
         <span class="sub">{{ p.sub }}<template v-if="compact"> · <b class="cost">{{ p.cost }}</b></template></span>
         <span class="impact">{{ p.impact }}</span>
       </div>
-      <button type="button" class="del" :aria-label="p.ariaLabel" :disabled="p.pending" @click="emit('remove', p)">
+      <button type="button" class="del" :aria-label="p.ariaLabel" :disabled="p.pending || busy" @click="emit('remove', p)">
         <AppIcon name="trash" :size="18" />
       </button>
     </li>

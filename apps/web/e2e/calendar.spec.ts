@@ -117,6 +117,26 @@ test('removes a period and keeps it removed after a reload', async ({ page }) =>
   await expect(page.getByTestId('kpi-days')).toContainText('16');
 });
 
+test('deletes only one period on a double click of its trash button (R33)', async ({ page }) => {
+  await freshAccount(page);
+  const deletes: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().endsWith('/api/leaves/delete')) deletes.push(r.postData() ?? '');
+  });
+  await page.goto('/calendar');
+  await expect(page.getByTestId('kpi-days')).toContainText('21');
+  await page.getByRole('button', { name: 'Supprimer les vacances du 24 déc.' }).dblclick();
+  await expect(page.getByTestId('kpi-days')).toContainText('16');
+  await expect(periodsList(page).getByRole('listitem')).toHaveCount(2);
+  // Les corbeilles attendent la fin de la suppression, puis se réarment.
+  await expect(page.getByRole('button', { name: /^Supprimer les vacances du/ }).first()).toBeEnabled();
+  await page.waitForTimeout(600);
+  expect(deletes).toHaveLength(1);
+  await expect(page.getByTestId('kpi-days')).toContainText('16');
+  await expect(periodsList(page).getByRole('listitem').filter({ hasText: '7 mai 2027' })).toHaveCount(1);
+  await expect(periodsList(page).getByRole('listitem').filter({ hasText: '2 août → 20 août 2027' })).toHaveCount(1);
+});
+
 test('says when the days of a period were already posted', async ({ page, isMobile }) => {
   await freshAccount(page);
   await page.goto('/calendar');
@@ -264,6 +284,23 @@ test.describe('desktop', () => {
     await expect(page.getByLabel('Compter la piste')).not.toBeChecked();
   });
 
+  test('words the cost of an added period with the prospect switch of this screen', async ({ page }) => {
+    await freshAccount(page);
+    await page.goto('/calendar');
+    const add = async (from: string, to: string) => {
+      await page.getByLabel('Du', { exact: true }).fill(from);
+      await page.getByLabel('Au', { exact: true }).fill(to);
+      await page.getByRole('button', { name: 'Ajouter et simuler' }).click();
+    };
+    // Sans la piste : trois jours chez le client B (3 × 600 €).
+    await add('2027-09-06', '2027-09-10');
+    await expect(page.getByRole('status').filter({ hasText: 'jours ajoutés' })).toHaveText(fr('5 jours ajoutés : −1 800 € encaissés'));
+    // Avec la piste cochée ici (profil inchangé) : deux lundis et vendredis chez le client C s’y ajoutent (2 × 700 €).
+    await page.getByLabel('Compter la piste').check();
+    await add('2027-10-04', '2027-10-08');
+    await expect(page.getByRole('status').filter({ hasText: 'jours ajoutés' })).toHaveText(fr('5 jours ajoutés : −3 200 € encaissés'));
+  });
+
   test('keeps the month table inside its card, scrolling on its own', async ({ page }) => {
     await freshAccount(page);
     await page.goto('/calendar');
@@ -301,6 +338,24 @@ test.describe('mobile', () => {
     await expect(month('février 2027')).toContainText('Rouge à cause des vacances');
     await expect(month('octobre 2026')).toContainText('creux lié aux délais de paiement');
     await expect(month('novembre 2026')).toHaveCount(0);
+  });
+
+  test('marks a posed leave with a glyph, not by its colour alone', async ({ page }) => {
+    await freshAccount(page);
+    await page.goto('/calendar');
+    const marker = (name: RegExp) =>
+      page.getByRole('button', { name }).evaluate((el) => {
+        const style = getComputedStyle(el, '::after');
+        return { content: style.content, height: style.height, width: style.width };
+      });
+    const free = await marker(/^mercredi 14 octobre 2026/);
+    expect(free.content === 'none' || free.content === 'normal').toBe(true);
+    await page.getByRole('button', { name: /^mercredi 14 octobre 2026/ }).click();
+    await expect(page.getByRole('button', { name: /^mercredi 14 octobre 2026/ })).toHaveAttribute('aria-pressed', 'true');
+    const posed = await marker(/^mercredi 14 octobre 2026/);
+    expect(posed.content).not.toBe('none');
+    expect(parseFloat(posed.width)).toBeGreaterThanOrEqual(10);
+    expect(parseFloat(posed.height)).toBeGreaterThanOrEqual(3);
   });
 
   test('keeps the calendar cells touch-sized', async ({ page }) => {

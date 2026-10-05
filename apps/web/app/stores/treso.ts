@@ -170,7 +170,8 @@ export const useTresoStore = defineStore('treso', () => {
       (s, updated) => replaceClient(s, updated),
     );
 
-  async function addLeaves(body: LeavesInput): Promise<{ created: number; cost: Cents } | null> {
+  /** `includeProspects` : les pistes comptent-elles dans le coût renvoyé ? Par défaut, comme le profil ; l’écran Calendrier passe son choix local. */
+  async function addLeaves(body: LeavesInput, opts: { includeProspects?: boolean } = {}): Promise<{ created: number; cost: Cents } | null> {
     const res = await mutate(
       () => {},
       () => api<{ leaves: LeaveDto[]; created: number }>('/leaves', { method: 'POST', body }),
@@ -179,7 +180,7 @@ export const useTresoStore = defineStore('treso', () => {
     const known = new Set(data.value.leaves.map((l) => l.id));
     const fresh = res.leaves.filter((l) => !known.has(l.id));
     data.value.leaves = [...data.value.leaves, ...fresh].sort((a, b) => a.date.localeCompare(b.date));
-    return { created: res.created, cost: leavesCost(fresh, data.value.clients, data.value.profile.includeProspects) };
+    return { created: res.created, cost: leavesCost(fresh, data.value.clients, opts.includeProspects ?? data.value.profile.includeProspects) };
   }
 
   const deleteLeaves = (ids: string[]) =>

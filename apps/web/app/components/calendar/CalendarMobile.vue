@@ -6,7 +6,7 @@
  */
 const {
   months, monthLabel, canPrev, canNext, prev, next, selectedTarget, setTarget, targetOptions, targetShortOptions, days, holidayCaption, toggleDay,
-  kpis, alert, miniBars, litMonths, impactedMonths, periods, deletePeriod, addPeriod, adding, lastMessage,
+  kpis, alert, miniBars, litMonths, impactedMonths, periods, deletePeriod, deleting, addPeriod, adding, lastMessage,
 } = useCalendarView();
 
 const formOpen = ref(false);
@@ -66,7 +66,7 @@ const formOpen = ref(false);
 
     <section class="card periods-card" aria-labelledby="periods-title">
       <h2 id="periods-title">Tes périodes</h2>
-      <LeavePeriods compact :periods="periods" @remove="deletePeriod" />
+      <LeavePeriods compact :periods="periods" :busy="deleting" @remove="deletePeriod" />
     </section>
 
     <AppButton variant="primary" block class="open" :aria-controls="formOpen ? 'leave-form' : undefined" :aria-expanded="formOpen" @click="formOpen = !formOpen">

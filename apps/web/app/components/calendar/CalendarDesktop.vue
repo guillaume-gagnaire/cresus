@@ -6,7 +6,7 @@
  */
 const {
   monthLabel, range, canPrev, canNext, prev, next, selectedTarget, setTarget, targetOptions, days, legend, toggleDay, kpis, alert,
-  impactColumns, tableRows, periods, deletePeriod, includeProspect, hasProspects, prospectLabel, toggleProspect, addPeriod, adding, lastMessage,
+  impactColumns, tableRows, periods, deletePeriod, deleting, includeProspect, hasProspects, prospectLabel, toggleProspect, addPeriod, adding, lastMessage,
 } = useCalendarView();
 </script>
 
@@ -45,7 +45,7 @@ const {
           @update:target="setTarget"
           @submit="(from, to) => addPeriod(from, to)"
         />
-        <LeavePeriods :periods="periods" @remove="deletePeriod" />
+        <LeavePeriods :periods="periods" :busy="deleting" @remove="deletePeriod" />
       </section>
     </div>
 

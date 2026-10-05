@@ -92,8 +92,10 @@ const WEEKDAY_INITIALS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const;
 .compact { gap: 6px; }
 .compact .weekdays { gap: 2px; font-size: 13px; font-weight: 400; }
 .compact .grid { gap: 2px; }
-.compact .cell { aspect-ratio: 1; min-height: 44px; padding: 0; border-radius: 12px; align-items: center; justify-content: center; font-size: 15px; }
-.compact .is-weekend { background: transparent; border: 0; color: var(--on-night-muted); }
+.compact .cell { position: relative; aspect-ratio: 1; min-height: 44px; padding: 0; border-radius: 12px; align-items: center; justify-content: center; font-size: 15px; }
+.compact .is-weekend { background: transparent; border: 0; color: var(--muted-2); }
 .compact .is-holiday { background: #E9E3F7; border: 0; color: #6A3FC9; }
+/* Sans le mot « Vacances » (cases trop petites), un trait sous le numéro marque le congé : la couleur n’est pas seule à le dire. */
 .compact .is-leave { border: 0; }
+.compact .is-leave::after { content: ''; position: absolute; left: 50%; bottom: 7px; width: 14px; height: 3px; margin-left: -7px; border-radius: 2px; background: var(--ink); }
 </style>
