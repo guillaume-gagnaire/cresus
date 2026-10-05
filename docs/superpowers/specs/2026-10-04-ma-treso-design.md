@@ -360,7 +360,7 @@ Demande utilisateur : « un serveur MCP utilisable depuis Claude Code, où l'on 
 ### 9.1 Architecture
 
 - Le serveur MCP vit **dans l'API NestJS** (même image, même domaine), avec le SDK officiel `@modelcontextprotocol/sdk` (≥ 1.32, compatible zod 4 et Express 5).
-- Transport **Streamable HTTP** sur `/mcp` (POST, GET et DELETE), en mode sans session : un transport par requête.
+- Transport **Streamable HTTP** sur `/mcp`, en mode sans session : un serveur et un transport par requête. Le point d'entrée répond en **POST** ; `GET` (flux SSE initié par le serveur) et `DELETE` (fin de session) n'ont pas de sens sans session et renvoient **405** (`Allow: POST`) une fois le jeton Bearer vérifié (401 sans jeton valide, avant tout traitement du corps).
 - L'API est son propre **serveur d'autorisation OAuth 2.1**, via le routeur du SDK (`mcpAuthRouter`) monté à la racine. Il expose :
   - `/.well-known/oauth-authorization-server` (RFC 8414) et `/.well-known/oauth-protected-resource` (RFC 9728) ;
   - `/authorize`, `/token`, `/register` (enregistrement dynamique de clients, RFC 7591, clients publics sans secret) et `/revoke`.
