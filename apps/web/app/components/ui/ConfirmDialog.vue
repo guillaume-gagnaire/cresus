@@ -19,6 +19,8 @@ const password = ref('');
 const titleId = useId();
 const messageId = useId();
 let opener: HTMLElement | null = null;
+/** `close()` déclenche l’évènement `close` un peu plus tard : s’il arrive après une réouverture, il ne doit pas passer pour un `cancel`. */
+let closingByParent = false;
 
 function show(): void {
   const el = dialog.value;
@@ -32,6 +34,7 @@ function hide(): void {
   const el = dialog.value;
   password.value = '';
   if (!el?.open) return;
+  closingByParent = true;
   el.close();
   opener?.focus();
   opener = null;
@@ -42,6 +45,10 @@ onMounted(() => { if (props.open) show(); });
 
 /** Fermeture native sans passer par le parent (ex. seconde pression sur Échap) : on le prévient. */
 function onClose(): void {
+  if (closingByParent) {
+    closingByParent = false;
+    return;
+  }
   if (props.open) emit('cancel');
 }
 
