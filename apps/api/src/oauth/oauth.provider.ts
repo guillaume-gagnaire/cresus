@@ -79,7 +79,11 @@ export class OAuthProvider implements OAuthServerProvider {
   challengeForAuthorizationCode(client: OAuthClientInformationFull, authorizationCode: string): Promise<string> {
     return this.guarded(async () => {
       const challenge = await this.store.codeChallenge(authorizationCode, client.client_id);
-      if (!challenge) throw new InvalidGrantError('Invalid or expired authorization code');
+      if (!challenge) {
+        // un code déjà échangé n'existe plus : s'il est présenté de nouveau, ce qu'il a émis est révoqué
+        await this.revokeIfReplayed(authorizationCode);
+        throw new InvalidGrantError('Invalid or expired authorization code');
+      }
       return challenge;
     });
   }
@@ -95,11 +99,14 @@ export class OAuthProvider implements OAuthServerProvider {
     return this.guarded(async () => {
       this.assertResource(resource);
       const code = await this.store.consumeCode(authorizationCode);
-      if (!code || code.expiresAt.getTime() <= Date.now() || code.clientId !== client.client_id) {
+      if (!code) {
+        // deux échanges simultanés du même code : le perdant arrive ici
+        await this.revokeIfReplayed(authorizationCode);
         throw new InvalidGrantError('Invalid or expired authorization code');
       }
+      if (code.expiresAt.getTime() <= Date.now() || code.clientId !== client.client_id) throw new InvalidGrantError('Invalid or expired authorization code');
       if (redirectUri !== code.redirectUri) throw new InvalidGrantError('redirect_uri does not match the authorization request');
-      return toOAuthTokens(await this.store.issueTokens({ clientId: code.clientId, userId: code.userId, scope: code.scope }));
+      return toOAuthTokens(await this.store.issueTokens({ clientId: code.clientId, userId: code.userId, scope: code.scope, codeHash: code.codeHash }));
     });
   }
 
@@ -159,6 +166,12 @@ export class OAuthProvider implements OAuthServerProvider {
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
     if (state) url.searchParams.set('state', state);
     return url.href;
+  }
+
+  /** RFC 6749 §4.1.2 : un code déjà utilisé qu'on présente de nouveau fait révoquer les jetons qu'il a émis (sans effet si le code est simplement inconnu). */
+  private async revokeIfReplayed(authorizationCode: string): Promise<void> {
+    const revoked = await this.store.revokeTokensIssuedFromCode(authorizationCode);
+    if (revoked > 0) this.logger.warn(`Code d’autorisation rejoué : ${revoked} jeton(s) révoqué(s)`);
   }
 
   /**

@@ -18,6 +18,13 @@ describe('health', () => {
     expect(res.body.code).toBe('JSON_REQUIRED');
   });
 
+  it('applies the CSRF guard whatever the case of the path (Express routes are case-insensitive)', async () => {
+    for (const path of ['/API/health', '/Api/auth/logout']) {
+      const res = await request(app.getHttpServer()).post(path).type('form').send('a=1').expect(415);
+      expect(res.body.code, path).toBe('JSON_REQUIRED');
+    }
+  });
+
   it('answers unknown API routes with a JSON 404', async () => {
     const res = await request(app.getHttpServer()).get('/api/nope').expect(404);
     expect(res.body).toMatchObject({ code: 'NOT_FOUND' });

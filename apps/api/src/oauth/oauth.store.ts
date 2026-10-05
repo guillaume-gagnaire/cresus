@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { CustomOAuthError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
+import { CustomOAuthError, InvalidClientMetadataError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import type { OAuthRegisteredClientsStore } from '@modelcontextprotocol/sdk/server/auth/clients.js';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import { Inject, Injectable } from '@nestjs/common';
@@ -17,7 +17,14 @@ export const ACCESS_TOKEN_TTL_MS = 60 * 60_000;
 export const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60_000;
 
 const UNNAMED_CLIENT = 'Application sans nom';
-const MAX_CLIENT_NAME_LENGTH = 100;
+const MAX_CLIENT_NAME_LENGTH = 200;
+const MAX_REDIRECT_URIS = 10;
+/** Taille maximale d'une redirect_uri et de chaque champ texte conservé. */
+const MAX_FIELD_LENGTH = 2048;
+/** Métadonnées d'enregistrement conservées en plus de redirect_uris, client_name et des valeurs imposées (liste blanche). */
+const OPTIONAL_FIELDS = ['client_uri', 'logo_uri', 'scope', 'software_id', 'software_version'] as const;
+
+type OAuthClientMetadata = Omit<OAuthClientInformationFull, 'client_id' | 'client_id_issued_at' | 'client_secret' | 'client_secret_expires_at'>;
 
 /** Secret aléatoire de 32 octets, en base64url : codes d'autorisation et jetons. */
 const newSecret = (): string => randomBytes(32).toString('base64url');
@@ -39,6 +46,14 @@ export interface TokenPair {
   scope: string;
 }
 
+/** Propriétaire d'une paire de jetons, et code d'autorisation dont elle découle (absent pour une paire créée hors parcours). */
+export interface TokenOwner {
+  clientId: string;
+  userId: string;
+  scope: string;
+  codeHash?: string | null;
+}
+
 export interface AccessTokenRecord {
   clientId: string;
   userId: string;
@@ -56,34 +71,54 @@ export class OAuthStore implements OAuthRegisteredClientsStore {
   async getClient(clientId: string): Promise<OAuthClientInformationFull | undefined> {
     const [row] = await this.db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId));
     if (!row) return undefined;
-    // `metadata` est ce que registerClient a écrit : une OAuthClientInformationFull
-    return { ...(row.metadata as unknown as OAuthClientInformationFull), client_id: row.clientId, client_name: row.clientName, redirect_uris: row.redirectUris };
+    // `metadata` est ce que registerClient a écrit (la liste blanche) ; l'identifiant et la date d'émission viennent des colonnes
+    return {
+      ...(row.metadata as unknown as OAuthClientMetadata),
+      client_id: row.clientId,
+      client_id_issued_at: Math.floor(row.createdAt.getTime() / 1000),
+      client_name: row.clientName,
+      redirect_uris: row.redirectUris,
+    };
   }
 
   /**
    * Clients publics uniquement : pas de secret, `client_id` aléatoire. Les valeurs imposées par le serveur
    * (méthode d'authentification, types de grant) remplacent celles demandées, comme le prévoit le SDK.
+   * Cette route est publique : seuls les champs de la liste blanche sont conservés (ni `jwks`, ni `contacts`,
+   * ni `software_statement`…) et leur taille est bornée, sinon une inscription anonyme pourrait remplir la base.
    */
   async registerClient(client: Omit<OAuthClientInformationFull, 'client_id' | 'client_id_issued_at'>): Promise<OAuthClientInformationFull> {
-    if (client.redirect_uris.length === 0 || !client.redirect_uris.every(isAllowedRedirectUri)) {
+    if (client.redirect_uris.length > MAX_REDIRECT_URIS) throw new InvalidClientMetadataError(`At most ${MAX_REDIRECT_URIS} redirect URIs are allowed`);
+    if (client.redirect_uris.some((uri) => uri.length > MAX_FIELD_LENGTH)) {
+      throw new InvalidClientMetadataError(`Redirect URIs must not exceed ${MAX_FIELD_LENGTH} characters`);
+    }
+    const name = client.client_name?.trim();
+    if (name && name.length > MAX_CLIENT_NAME_LENGTH) throw new InvalidClientMetadataError(`client_name must not exceed ${MAX_CLIENT_NAME_LENGTH} characters`);
+    const metadata: OAuthClientMetadata = {
+      redirect_uris: client.redirect_uris,
+      client_name: name || UNNAMED_CLIENT,
+      grant_types: ['authorization_code', 'refresh_token'],
+      response_types: ['code'],
+      token_endpoint_auth_method: 'none',
+    };
+    for (const field of OPTIONAL_FIELDS) {
+      const value = client[field];
+      if (value === undefined) continue;
+      if (value.length > MAX_FIELD_LENGTH) throw new InvalidClientMetadataError(`${field} must not exceed ${MAX_FIELD_LENGTH} characters`);
+      metadata[field] = value;
+    }
+    if (metadata.redirect_uris.length === 0 || !metadata.redirect_uris.every(isAllowedRedirectUri)) {
       // le SDK n'a pas de classe dédiée : RFC 7591 §3.2.2 définit `invalid_redirect_uri`
       throw new CustomOAuthError('invalid_redirect_uri', 'Redirect URIs must be http://localhost, http://127.0.0.1 or https URLs');
     }
-    const { client_secret: _secret, client_secret_expires_at: _secretExpiresAt, ...metadata } = client;
-    const info: OAuthClientInformationFull = {
-      ...metadata,
-      client_id: randomUUID(),
-      client_id_issued_at: Math.floor(Date.now() / 1000),
-      client_name: client.client_name?.trim().slice(0, MAX_CLIENT_NAME_LENGTH) || UNNAMED_CLIENT,
-      token_endpoint_auth_method: 'none',
-      grant_types: ['authorization_code', 'refresh_token'],
-      response_types: ['code'],
-    };
+    const issuedAt = Math.floor(Date.now() / 1000);
+    const info: OAuthClientInformationFull = { ...metadata, client_id: randomUUID(), client_id_issued_at: issuedAt };
     await this.db.insert(oauthClients).values({
       clientId: info.client_id,
-      clientName: info.client_name as string,
-      redirectUris: info.redirect_uris,
-      metadata: info as unknown as Record<string, unknown>,
+      clientName: metadata.client_name as string,
+      redirectUris: metadata.redirect_uris,
+      metadata: metadata as unknown as Record<string, unknown>,
+      createdAt: new Date(issuedAt * 1000),
     });
     return info;
   }
@@ -160,7 +195,8 @@ export class OAuthStore implements OAuthRegisteredClientsStore {
 
   // --- jetons -------------------------------------------------------------------------------------------------------
 
-  issueTokens(input: { clientId: string; userId: string; scope: string }): Promise<TokenPair> {
+  /** `codeHash` : code d'autorisation d'origine, pour pouvoir révoquer ces jetons si le code est rejoué. */
+  issueTokens(input: TokenOwner): Promise<TokenPair> {
     return this.insertTokens(this.db, input);
   }
 
@@ -173,7 +209,8 @@ export class OAuthStore implements OAuthRegisteredClientsStore {
         .set({ revokedAt: now })
         .where(and(eq(oauthTokens.refreshHash, hashSecret(refreshToken)), eq(oauthTokens.clientId, clientId), isNull(oauthTokens.revokedAt), gt(oauthTokens.refreshExpiresAt, now)))
         .returning();
-      return old ? this.insertTokens(tx, { clientId: old.clientId, userId: old.userId, scope: old.scope }) : null;
+      // la nouvelle paire garde le lien avec le code d'origine
+      return old ? this.insertTokens(tx, { clientId: old.clientId, userId: old.userId, scope: old.scope, codeHash: old.codeHash }) : null;
     });
   }
 
@@ -186,6 +223,19 @@ export class OAuthStore implements OAuthRegisteredClientsStore {
       .where(and(or(eq(oauthTokens.accessHash, hash), eq(oauthTokens.refreshHash, hash)), eq(oauthTokens.clientId, clientId), isNull(oauthTokens.revokedAt)));
   }
 
+  /**
+   * Un code d'autorisation rejoué (RFC 6749 §4.1.2) laisse supposer qu'il a été intercepté : on révoque tous les jetons
+   * issus de ce code, rotations comprises. Renvoie le nombre de jetons révoqués (0 si le code n'a jamais été échangé).
+   */
+  async revokeTokensIssuedFromCode(code: string): Promise<number> {
+    const revoked = await this.db
+      .update(oauthTokens)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(oauthTokens.codeHash, hashSecret(code)), isNull(oauthTokens.revokedAt)))
+      .returning({ id: oauthTokens.id });
+    return revoked.length;
+  }
+
   async findAccessToken(token: string): Promise<AccessTokenRecord | null> {
     const [row] = await this.db
       .select({ clientId: oauthTokens.clientId, userId: oauthTokens.userId, scope: oauthTokens.scope, accessExpiresAt: oauthTokens.accessExpiresAt })
@@ -194,7 +244,7 @@ export class OAuthStore implements OAuthRegisteredClientsStore {
     return row ?? null;
   }
 
-  private async insertTokens(db: Db, input: { clientId: string; userId: string; scope: string }): Promise<TokenPair> {
+  private async insertTokens(db: Db, input: TokenOwner): Promise<TokenPair> {
     const accessToken = newSecret();
     const refreshToken = newSecret();
     const now = Date.now();

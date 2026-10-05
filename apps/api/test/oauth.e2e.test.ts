@@ -73,19 +73,13 @@ describe('OAuth 2.1 authorization server', () => {
     await agent.post('/api/auth/register').send({ ...creds, email }).expect(201);
     return agent;
   };
-  /**
-   * Enregistre un client par le magasin du fournisseur (sans passer par POST /register) : le routeur du SDK limite
-   * l'enregistrement à 20 requêtes par heure et par IP, et la suite en a besoin de bien plus. POST /register a ses propres tests.
-   */
+  /** Enregistrement dynamique par HTTP ; les limites du routeur du SDK sont relevées par setupTestApp (OAUTH_RATE_LIMIT_MULTIPLIER). */
   const registerClient = async (redirectUri = REDIRECT): Promise<string> => {
-    const client = await provider.clientsStore.registerClient!({
-      client_name: 'Claude Code',
-      redirect_uris: [redirectUri],
-      grant_types: ['authorization_code', 'refresh_token'],
-      response_types: ['code'],
-      token_endpoint_auth_method: 'none',
-    });
-    return client.client_id;
+    const res = await http()
+      .post('/register')
+      .send({ client_name: 'Claude Code', redirect_uris: [redirectUri], grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'], token_endpoint_auth_method: 'none' })
+      .expect(201);
+    return res.body.client_id as string;
   };
   const authorizeQuery = (clientId: string, challenge: string, extra: Record<string, string> = {}) => ({
     response_type: 'code',
@@ -167,6 +161,59 @@ describe('OAuth 2.1 authorization server', () => {
     await http().post('/register').send({ redirect_uris: [REDIRECT, 'http://evil.example/cb'] }).expect(400);
     await http().post('/register').send({ redirect_uris: [] }).expect(400);
     expect(await db.select().from(oauthClients)).toHaveLength(1);
+  });
+
+  it('bounds what /register accepts: body size, number and size of redirect URIs, name length', async () => {
+    const register = (body: Record<string, unknown>) => http().post('/register').send(body);
+    const tooBig = await register({ redirect_uris: [REDIRECT], jwks: { keys: ['x'.repeat(20_000)] } }).expect(413);
+    expect(tooBig.body.error).toBe('invalid_request');
+    expect((await http().post('/register').type('json').send('{"redirect_uris": [').expect(400)).body.error).toBe('invalid_request');
+
+    const many = Array.from({ length: 11 }, (_, i) => `https://app${i}.example/cb`);
+    expect((await register({ redirect_uris: many }).expect(400)).body.error).toBe('invalid_client_metadata');
+    await register({ redirect_uris: many.slice(0, 10) }).expect(201);
+    const longUri = `https://app.example/${'a'.repeat(2048)}`;
+    expect((await register({ redirect_uris: [longUri] }).expect(400)).body.error).toBe('invalid_client_metadata');
+    expect((await register({ redirect_uris: [REDIRECT], client_name: 'n'.repeat(201) }).expect(400)).body.error).toBe('invalid_client_metadata');
+    await register({ redirect_uris: [REDIRECT], client_name: 'n'.repeat(200) }).expect(201);
+    expect((await register({ redirect_uris: [REDIRECT], software_id: 's'.repeat(2049) }).expect(400)).body.error).toBe('invalid_client_metadata');
+  });
+
+  it('bounds the form bodies of /token and /revoke too', async () => {
+    const junk = { grant_type: 'authorization_code', junk: 'x'.repeat(20_000) };
+    expect((await http().post('/token').type('form').send(junk).expect(413)).body.error).toBe('invalid_request');
+    expect((await http().post('/revoke').type('form').send({ token: 'x'.repeat(20_000) }).expect(413)).body.error).toBe('invalid_request');
+  });
+
+  it('persists only a whitelist of client metadata', async () => {
+    const res = await http()
+      .post('/register')
+      .send({
+        redirect_uris: [REDIRECT],
+        client_name: 'Claude Code',
+        client_uri: 'https://claude.ai',
+        logo_uri: 'https://claude.ai/logo.png',
+        scope: 'cresus',
+        software_id: 'claude-code',
+        software_version: '1.2.3',
+        grant_types: ['authorization_code', 'client_credentials'],
+        response_types: ['code', 'token'],
+        token_endpoint_auth_method: 'none',
+        jwks: { keys: [{ kty: 'RSA', n: 'x'.repeat(5_000), e: 'AQAB' }] },
+        contacts: ['a@example.com'],
+        software_statement: 'y'.repeat(5_000),
+        tos_uri: 'https://claude.ai/tos',
+        policy_uri: 'https://claude.ai/policy',
+        jwks_uri: 'https://claude.ai/jwks',
+      })
+      .expect(201);
+    const allowed = ['redirect_uris', 'client_name', 'client_uri', 'logo_uri', 'grant_types', 'response_types', 'token_endpoint_auth_method', 'scope', 'software_id', 'software_version'];
+    expect(Object.keys(res.body).sort()).toEqual([...allowed, 'client_id', 'client_id_issued_at'].sort());
+    expect(res.body).toMatchObject({ grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'], software_id: 'claude-code' });
+    const [row] = await db.select().from(oauthClients).where(eq(oauthClients.clientId, res.body.client_id));
+    expect(Object.keys(row?.metadata ?? {}).sort()).toEqual([...allowed].sort());
+    const client = await provider.clientsStore.getClient(res.body.client_id);
+    expect(client).toEqual(res.body);
   });
 
   it('forces every registered client to be public, whatever authentication method it asks for', async () => {
@@ -292,6 +339,37 @@ describe('OAuth 2.1 authorization server', () => {
     const replay = await exchangeCode(clientId, code, verifier).expect(400);
     expect(replay.body.error).toBe('invalid_grant');
     expect(await db.select().from(oauthCodes)).toHaveLength(0);
+  });
+
+  it('revokes the tokens issued from an authorization code when that code is replayed (RFC 6749 4.1.2)', async () => {
+    const agent = await newUser();
+    const clientId = await registerClient();
+    const { verifier, challenge } = pkce();
+    const code = await obtainCode(agent, clientId, challenge);
+    const first = (await exchangeCode(clientId, code, verifier).expect(200)).body as { access_token: string; refresh_token: string };
+    // le jeton issu d'une rotation descend du même code : il est révoqué lui aussi
+    const rotated = (await tokenRequest({ grant_type: 'refresh_token', refresh_token: first.refresh_token, client_id: clientId }).expect(200)).body as { access_token: string; refresh_token: string };
+    // un autre parcours, sans rapport avec ce code
+    const other = await fullFlow('other@example.com');
+    await provider.verifyAccessToken(rotated.access_token);
+
+    expect((await exchangeCode(clientId, code, verifier).expect(400)).body.error).toBe('invalid_grant');
+    await expect(provider.verifyAccessToken(rotated.access_token)).rejects.toBeInstanceOf(InvalidTokenError);
+    expect((await tokenRequest({ grant_type: 'refresh_token', refresh_token: rotated.refresh_token, client_id: clientId }).expect(400)).body.error).toBe('invalid_grant');
+    await expect(provider.verifyAccessToken(other.tokens.access_token)).resolves.toMatchObject({ scopes: ['cresus'] });
+    expect((await db.select().from(oauthTokens).where(eq(oauthTokens.clientId, clientId))).filter((t) => t.revokedAt === null)).toHaveLength(0);
+  });
+
+  it('does not revoke anything when an unknown code, or another client, presents a code that was never redeemed', async () => {
+    const agent = await newUser();
+    const clientId = await registerClient();
+    const { verifier, challenge } = pkce();
+    const first = await fullFlow('other@example.com');
+    const code = await obtainCode(agent, clientId, challenge);
+    expect((await exchangeCode(first.clientId, code, verifier).expect(400)).body.error).toBe('invalid_grant');
+    expect((await exchangeCode(clientId, randomBytes(32).toString('base64url'), verifier).expect(400)).body.error).toBe('invalid_grant');
+    await provider.verifyAccessToken(first.tokens.access_token);
+    await exchangeCode(clientId, code, verifier).expect(200);
   });
 
   it('refuses a wrong code_verifier, an unknown code, another client, another redirect URI and an expired code', async () => {
@@ -487,10 +565,44 @@ describe('PUBLIC_URL', () => {
     expect(loadConfig({ ...base, NODE_ENV: 'production', PUBLIC_URL: 'https://cresus.gagnaire.dev' }).publicUrl).toBe('https://cresus.gagnaire.dev');
   });
 
-  it('rejects anything that is not an http(s) URL', () => {
-    for (const bad of ['cresus', 'ftp://cresus.gagnaire.dev', 'https://cresus.gagnaire.dev/?a=1', 'https://cresus.gagnaire.dev/#x']) {
+  it('rejects anything that is not an http(s) origin: other schemes, paths, query, fragment', () => {
+    for (const bad of ['cresus', 'ftp://cresus.gagnaire.dev', 'https://cresus.gagnaire.dev/?a=1', 'https://cresus.gagnaire.dev/#x', 'https://cresus.gagnaire.dev/app', 'https://cresus.gagnaire.dev/app/']) {
       expect(() => loadConfig({ ...base, PUBLIC_URL: bad }), bad).toThrow(/PUBLIC_URL/);
     }
+    expect(() => loadConfig({ ...base, PUBLIC_URL: 'https://cresus.gagnaire.dev/app' })).toThrow('PUBLIC_URL ne doit pas contenir de chemin');
+  });
+});
+
+describe('OAUTH_RATE_LIMIT_MULTIPLIER', () => {
+  const base = { NODE_ENV: 'test', DATABASE_URL: 'pglite:memory', SESSION_SECRET: 'test-secret-test-secret' };
+
+  it('defaults to 1 (the SDK limits) and must be a positive integer', () => {
+    expect(loadConfig(base).oauthRateLimitMultiplier).toBe(1);
+    expect(loadConfig({ ...base, OAUTH_RATE_LIMIT_MULTIPLIER: '1000' }).oauthRateLimitMultiplier).toBe(1000);
+    for (const bad of ['0', '-1', '1.5', 'beaucoup']) expect(() => loadConfig({ ...base, OAUTH_RATE_LIMIT_MULTIPLIER: bad }), bad).toThrow();
+  });
+
+  const registrations = async (multiplier: string, count: number): Promise<number[]> => {
+    const app = await setupTestApp({ OAUTH_RATE_LIMIT_MULTIPLIER: multiplier });
+    try {
+      const statuses: number[] = [];
+      for (let i = 0; i < count; i++) statuses.push((await request(app.getHttpServer()).post('/register').send({ redirect_uris: [REDIRECT] })).status);
+      return statuses;
+    } finally {
+      await app.close();
+    }
+  };
+
+  it('keeps the SDK limit on /register (20 per hour and per IP) by default', async () => {
+    const statuses = await registrations('1', 21);
+    expect(statuses.slice(0, 20).every((status) => status === 201)).toBe(true);
+    expect(statuses[20]).toBe(429);
+  });
+
+  it('scales the limits of the SDK router', async () => {
+    const statuses = await registrations('2', 41);
+    expect(statuses.slice(0, 40).every((status) => status === 201)).toBe(true);
+    expect(statuses[40]).toBe(429);
   });
 });
 

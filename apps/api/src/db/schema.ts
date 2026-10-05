@@ -151,4 +151,6 @@ export const oauthTokens = pgTable('oauth_tokens', {
   accessExpiresAt: timestamp('access_expires_at', { withTimezone: true }).notNull(),
   refreshExpiresAt: timestamp('refresh_expires_at', { withTimezone: true }).notNull(),
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
-}, (t) => [index('oauth_tokens_user_idx').on(t.userId)]);
+  /** Hachage du code d'autorisation d'origine (conservé par la rotation) : un code rejoué révoque toute sa descendance. */
+  codeHash: text('code_hash'),
+}, (t) => [index('oauth_tokens_user_idx').on(t.userId), index('oauth_tokens_code_idx').on(t.codeHash)]);

@@ -14,6 +14,7 @@ const envSchema = z.object({
   SEED_DEMO_PASSWORD: z.string().min(8).default('demo1234'),
   WEB_DIST: z.string().optional(),
   AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(10),
+  OAUTH_RATE_LIMIT_MULTIPLIER: z.coerce.number().int().min(1).max(100_000).default(1),
 });
 
 export interface AppConfig {
@@ -22,7 +23,7 @@ export interface AppConfig {
   databaseUrl: string;
   sessionSecret: string;
   webauthn: { rpId: string; rpName: string; origin: string };
-  /** URL publique du site, sans « / » final : émetteur OAuth, ressource MCP (`${publicUrl}/mcp`) et page de consentement. */
+  /** Origine publique du site, sans « / » final ni chemin : émetteur OAuth, ressource MCP (`${publicUrl}/mcp`) et page de consentement. */
   publicUrl: string;
   cookieSecure: boolean;
   seedDemo: boolean;
@@ -30,19 +31,23 @@ export interface AppConfig {
   webDist: string | null;
   /** Requêtes par minute et par IP sur /auth (10 par défaut, relevé pour les tests Playwright) */
   authRateLimit: number;
+  /** Facteur appliqué aux limites par défaut du routeur OAuth du SDK (1 en production ; relevé pour les e2e Playwright et de production). */
+  oauthRateLimitMultiplier: number;
 }
 
 export const CONFIG = Symbol('CONFIG');
 
 const DEFAULT_PUBLIC_URL = 'http://localhost:3000';
 
-/** URL absolue http(s) sans requête ni fragment, normalisée sans « / » final. */
+/** Origine http(s) absolue (sans chemin, requête ni fragment), normalisée sans « / » final. */
 function parsePublicUrl(raw: string): string {
   const url = URL.canParse(raw) ? new URL(raw) : null;
   if (!url || !/^https?:$/.test(url.protocol) || url.search || url.hash) {
     throw new Error('PUBLIC_URL doit être une URL http(s) absolue, sans paramètres ni ancre');
   }
-  return url.href.replace(/\/+$/, '');
+  // les routes OAuth (/authorize, /token…) et /mcp sont à la racine du domaine : un chemin ferait diverger l'émetteur et les routes
+  if (url.pathname !== '/') throw new Error('PUBLIC_URL ne doit pas contenir de chemin (ex. https://cresus.gagnaire.dev)');
+  return url.origin;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -62,5 +67,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     seedDemoPassword: e.SEED_DEMO_PASSWORD,
     webDist: e.WEB_DIST ? e.WEB_DIST : null,
     authRateLimit: e.AUTH_RATE_LIMIT,
+    oauthRateLimitMultiplier: e.OAUTH_RATE_LIMIT_MULTIPLIER,
   };
 }

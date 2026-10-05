@@ -15,6 +15,8 @@ export async function setupTestApp(overrides: Record<string, string> = {}): Prom
     SEED_DEMO: 'false',
     // limite haute par défaut pour que les tests d'auth restent déterministes ; les tests de limitation créent leur propre app
     AUTH_RATE_LIMIT: '1000',
+    // idem pour les limites du routeur OAuth du SDK (20 /register par heure, 50 /token par 15 min…) ; un test dédié les vérifie
+    OAUTH_RATE_LIMIT_MULTIPLIER: '1000',
     ...overrides,
   });
   const app = await createApp(config);
