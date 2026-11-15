@@ -111,7 +111,7 @@ C'est l'écran principal, ouvert depuis la liste des évènements.
 - **Données** : `accounts` (asso), `sessions`, `events`, `articles`, `sales` (id UUID fourni par le client, évènement, article, prix en centimes, heure de vente donnée par le client, heure de réception, annulée le). Tout est cloisonné par compte : un compte ne voit ni ne modifie jamais les données d'un autre (404).
 - **API REST JSON** sous `/api` : auth (`signup`, `login`, `logout`, `me`), compte (nom, mot de passe, suppression), évènements (liste avec totaux, création avec copie, détail avec articles et compteurs, modification, suppression), articles (création, modification, réordonnancement, suppression/archivage), `POST /api/events/:id/sync` (lot ordonné d'opérations `sale`/`void`, idempotent, renvoie les compteurs à jour), `GET /api/events/:id/summary` (compteurs, léger, pour le rafraîchissement), historique paginé, export `.xlsx` (généré côté serveur avec `exceljs`).
 - **File d'attente client** dans `localStorage`, par compte ; compteurs affichés = compteurs serveur + ventes en attente − annulations en attente ; la réponse de `sync` remplace les compteurs serveur et retire les opérations envoyées, en une fois.
-- Une vente porte l'heure du téléphone ; le serveur refuse une heure de plus d'un jour dans le futur.
+- Une vente porte l'heure du téléphone ; une heure aberrante (plus d'un jour dans le futur, ou avant 2020) est remplacée par l'heure de réception : la vente est gardée, jamais perdue.
 
 ## 7. Mise en production
 
