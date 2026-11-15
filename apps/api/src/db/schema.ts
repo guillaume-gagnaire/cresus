@@ -1,10 +1,16 @@
 import { sql } from 'drizzle-orm';
-import { boolean, date, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, date, index, integer, pgSchema, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+
+/**
+ * Toutes les tables de Cresus vivent dans le schéma « cresus » : la base de production a d'abord servi à Ma Tréso, dont
+ * les tables (et le journal de migrations) restent dans « public » et « drizzle » sans jamais gêner Cresus.
+ */
+export const cresus = pgSchema('cresus');
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
 /** Une asso = un compte = un email. Les bénévoles partagent ses identifiants. */
-export const accounts = pgTable(
+export const accounts = cresus.table(
   'accounts',
   {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -17,7 +23,7 @@ export const accounts = pgTable(
 );
 
 /** `id` est le hash SHA-256 du jeton du cookie : le jeton lui-même n'est jamais stocké. */
-export const sessions = pgTable(
+export const sessions = cresus.table(
   'sessions',
   {
     id: text('id').primaryKey(),
@@ -30,7 +36,7 @@ export const sessions = pgTable(
   (t) => [index('sessions_account_idx').on(t.accountId)],
 );
 
-export const events = pgTable(
+export const events = cresus.table(
   'events',
   {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -44,7 +50,7 @@ export const events = pgTable(
   (t) => [index('events_account_date_idx').on(t.accountId, t.date)],
 );
 
-export const articles = pgTable(
+export const articles = cresus.table(
   'articles',
   {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -65,7 +71,7 @@ export const articles = pgTable(
 );
 
 /** Une vente = un appui. `id` est généré par le téléphone (envoi idempotent), le prix est celui du moment. */
-export const sales = pgTable(
+export const sales = cresus.table(
   'sales',
   {
     id: uuid('id').primaryKey(),

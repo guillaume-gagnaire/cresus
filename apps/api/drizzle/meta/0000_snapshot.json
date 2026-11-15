@@ -1,12 +1,12 @@
 {
-  "id": "d4edfea1-c8b0-466d-be22-5bc550a6a007",
+  "id": "e8f6b6ac-8959-42ec-94e8-4bcf61faebef",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.accounts": {
+    "cresus.accounts": {
       "name": "accounts",
-      "schema": "",
+      "schema": "cresus",
       "columns": {
         "id": {
           "name": "id",
@@ -65,9 +65,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.articles": {
+    "cresus.articles": {
       "name": "articles",
-      "schema": "",
+      "schema": "cresus",
       "columns": {
         "id": {
           "name": "id",
@@ -149,6 +149,7 @@
           "name": "articles_event_id_events_id_fk",
           "tableFrom": "articles",
           "tableTo": "events",
+          "schemaTo": "cresus",
           "columnsFrom": [
             "event_id"
           ],
@@ -165,9 +166,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.events": {
+    "cresus.events": {
       "name": "events",
-      "schema": "",
+      "schema": "cresus",
       "columns": {
         "id": {
           "name": "id",
@@ -230,6 +231,7 @@
           "name": "events_account_id_accounts_id_fk",
           "tableFrom": "events",
           "tableTo": "accounts",
+          "schemaTo": "cresus",
           "columnsFrom": [
             "account_id"
           ],
@@ -246,9 +248,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.sales": {
+    "cresus.sales": {
       "name": "sales",
-      "schema": "",
+      "schema": "cresus",
       "columns": {
         "id": {
           "name": "id",
@@ -327,7 +329,7 @@
             }
           ],
           "isUnique": false,
-          "where": "\"sales\".\"voided_at\" is null",
+          "where": "\"cresus\".\"sales\".\"voided_at\" is null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -338,6 +340,7 @@
           "name": "sales_event_id_events_id_fk",
           "tableFrom": "sales",
           "tableTo": "events",
+          "schemaTo": "cresus",
           "columnsFrom": [
             "event_id"
           ],
@@ -351,6 +354,7 @@
           "name": "sales_article_id_articles_id_fk",
           "tableFrom": "sales",
           "tableTo": "articles",
+          "schemaTo": "cresus",
           "columnsFrom": [
             "article_id"
           ],
@@ -367,9 +371,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.sessions": {
+    "cresus.sessions": {
       "name": "sessions",
-      "schema": "",
+      "schema": "cresus",
       "columns": {
         "id": {
           "name": "id",
@@ -419,6 +423,7 @@
           "name": "sessions_account_id_accounts_id_fk",
           "tableFrom": "sessions",
           "tableTo": "accounts",
+          "schemaTo": "cresus",
           "columnsFrom": [
             "account_id"
           ],
@@ -437,7 +442,9 @@
     }
   },
   "enums": {},
-  "schemas": {},
+  "schemas": {
+    "cresus": "cresus"
+  },
   "sequences": {},
   "roles": {},
   "policies": {},
