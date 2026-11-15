@@ -14,8 +14,8 @@ const lines = computed(() =>
 <template>
   <div class="bilan">
     <header class="head">
-      <p class="sub">{{ subtitle ?? event.name }} · {{ formatDateLong(event.date) }}</p>
       <h1>Bilan</h1>
+      <p class="sub">{{ subtitle ?? event.name }} · {{ formatDateLong(event.date) }}</p>
     </header>
 
     <section class="card total-card" aria-label="Total">
@@ -82,8 +82,8 @@ const lines = computed(() =>
   font-weight: 800;
   color: var(--muted);
 }
-.sub::first-letter {
-  text-transform: uppercase;
+.sub {
+  margin-top: 2px;
 }
 h1 {
   font-size: 28px;

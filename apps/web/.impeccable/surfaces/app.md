@@ -15,7 +15,7 @@ Temps réel : les compteurs et le total se mettent à jour sur tous les appareil
 
 THESIS : une appli grand public chaleureuse, en langage courant, où la seule couleur vive est ce qui se touche. Refuse la grille grise de caisse enregistreuse et le tableau de bord SaaS.
 
-OWN-WORLD : fond rose pâle #FBE9E3 ; cartes blanches, coins 24 px, ombre douce ; encre brun chaud #1F1512, texte #3B2A26, secondaire #6B4F48 ; corail #D9381E réservé à l'actionnable (onglet actif, bouton principal, compteur de l'article touché) ; vert #1E9E57 = à jour, ambre #B45309 = en attente ; Nunito 500–900, chiffres tabulaires ; icônes au trait de 2,2 px arrondi ; pictos Fluent Emoji en couleur.
+OWN-WORLD : fond rose pâle #FBE9E3 ; cartes blanches, coins 24 px, ombre douce ; encre brun chaud #1F1512, texte #3B2A26, secondaire #6B4F48 ; corail #CF3519 (le #D9381E de la maquette, foncé pour atteindre 5:1 de contraste avec le texte blanc, AA en plein soleil) réservé à l'actionnable (onglet actif, bouton principal, compteur de l'article touché) ; vert #1E9E57 = à jour, ambre #B45309 = en attente ; Nunito 500–900, chiffres tabulaires ; icônes au trait de 2,2 px arrondi ; pictos Fluent Emoji en couleur.
 
 STORY : le bénévole voit le total, touche un article, voit « +1 » et peut annuler ; le trésorier prépare les articles (picto choisi tout seul) et lit le bilan, puis exporte.
 

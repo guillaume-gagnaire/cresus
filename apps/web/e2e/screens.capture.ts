@@ -11,11 +11,11 @@ test('captures', async ({ page }, info) => {
   const { eventId, articleIds } = await eventWithArticles(page, [
     ['Crêpe nutella', 250], ['Gaufre', 250], ['Hot-dog', 300], ['Frites', 200],
     ['Soda', 150], ['Jus de pomme', 100], ['Café', 100], ['Ticket tombola', 200],
-  ]);
+  ], 'Fête de l’école', '2026-06-27');
   const counts = [42, 18, 31, 27, 37, 22, 25, 63];
   const prices = [250, 250, 300, 200, 150, 100, 100, 200];
   const base = Date.now() - 4 * 3600 * 1000;
-  const ops = counts.flatMap((n, i) => Array.from({ length: n }, (_, k) => ({ op: 'sale', id: randomUUID(), articleId: articleIds[i], priceCents: prices[i], soldAt: new Date(base + (k * 997 + i * 7919) % (4 * 3600 * 1000)).toISOString() })));
+  const ops = counts.flatMap((n, i) => Array.from({ length: n }, (_, k) => ({ op: 'sale', id: randomUUID(), articleId: articleIds[i], priceCents: prices[i], soldAt: new Date(base + (k * 211_000 + i * 97_000) % (4 * 3600 * 1000)).toISOString() })));
   await page.request.post(`/api/events/${eventId}/sync`, { data: { ops } });
   await eventWithArticles(page, [], 'Marché de Noël', '2026-12-12');
 
@@ -36,7 +36,9 @@ test('captures', async ({ page }, info) => {
   await page.screenshot({ path: `${OUT}/${tag}-picto.png` });
   await page.goto(`/evenements/${eventId}/bilan`);
   await page.waitForTimeout(600);
-  await page.screenshot({ path: `${OUT}/${tag}-bilan.png`, fullPage: true });
+  await page.screenshot({ path: `${OUT}/${tag}-bilan.png` });
+  await page.getByRole('heading', { name: 'Dernières ventes' }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `${OUT}/${tag}-bilan-historique.png` });
   await page.context().clearCookies();
   await page.evaluate(() => localStorage.clear());
   await page.goto('/login');

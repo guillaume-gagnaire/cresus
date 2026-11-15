@@ -22,7 +22,7 @@ async function loadSales(reset: boolean): Promise<void> {
   loading.value = true;
   try {
     const cursor = !reset && next.value ? `&cursor=${encodeURIComponent(next.value)}` : '';
-    const page = await api.get<SalesPageDto>(`/events/${eventId.value}/sales?limit=50${cursor}`);
+    const page = await api.get<SalesPageDto>(`/events/${eventId.value}/sales?limit=20${cursor}`);
     sales.value = reset ? page.sales : [...sales.value, ...page.sales];
     next.value = page.next;
   } catch (e) {
@@ -87,7 +87,7 @@ const pictoOf = (articleId: string) => caisse.detail?.articles.find((a) => a.id 
             <PictoImg :name="sale.articleName" :picto="pictoOf(sale.articleId)" :size="26" />
             <span class="what">{{ sale.articleName }}</span>
             <span class="num price">{{ formatEuros(sale.priceCents) }}</span>
-            <button type="button" class="btn btn-text" :aria-label="`Supprimer la vente ${sale.articleName} de ${formatTime(sale.soldAt)}`" @click="askRemove(sale)">Supprimer</button>
+            <button type="button" class="remove" :aria-label="`Supprimer la vente ${sale.articleName} de ${formatTime(sale.soldAt)}`" @click="askRemove(sale)"><AppIcon name="trash" :size="20" /></button>
           </li>
         </ul>
         <p v-else-if="!loading" class="hint">Aucune vente pour l’instant.</p>
@@ -163,6 +163,22 @@ h2 {
 .price {
   font-size: 15px;
   font-weight: 800;
+}
+.remove {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.remove:hover {
+  background: var(--ground);
+  color: var(--ink);
 }
 .confirm {
   display: flex;

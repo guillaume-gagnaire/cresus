@@ -25,9 +25,12 @@ onMounted(async () => {
 <template>
   <div class="events">
     <header class="head">
-      <div>
-        <p class="asso">{{ auth.account?.name }}</p>
-        <h1>Vos évènements</h1>
+      <div class="title">
+        <span class="mark" aria-hidden="true">+1</span>
+        <div>
+          <h1>Vos évènements</h1>
+          <p class="asso">{{ auth.account?.name }}</p>
+        </div>
       </div>
       <div class="head-actions">
         <NuxtLink v-if="auth.account?.isAdmin" to="/admin" class="icon-button white" aria-label="Panneau d’admin"><AppIcon name="shield" /></NuxtLink>
@@ -73,6 +76,26 @@ onMounted(async () => {
   justify-content: space-between;
   gap: 12px;
   padding: 0 4px;
+}
+.title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.mark {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 14px;
+  background: var(--coral);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
 }
 .asso {
   font-size: 15px;

@@ -171,7 +171,7 @@ h3 {
 }
 .choice {
   min-height: 82px;
-  padding: 6px 4px;
+  padding: 6px 7px;
   border-radius: 16px;
   border: 3px solid transparent;
   background: var(--ground);
@@ -185,6 +185,8 @@ h3 {
   font-weight: 800;
   line-height: 1.1;
   text-align: center;
+  hyphens: auto;
+  overflow-wrap: anywhere;
 }
 @media (min-width: 720px) {
   .grid {

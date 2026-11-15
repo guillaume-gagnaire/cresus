@@ -100,8 +100,8 @@ const price = computed(() => formatEuros(props.article.priceCents));
     border-radius: 26px;
   }
   .img {
-    width: 68px !important;
-    height: 68px !important;
+    width: 80px !important;
+    height: 80px !important;
   }
   .badge {
     min-width: 42px;
@@ -109,7 +109,7 @@ const price = computed(() => formatEuros(props.article.priceCents));
     font-size: 19px;
   }
   .name {
-    font-size: 20px;
+    font-size: 22px;
   }
   .price {
     font-size: 17px;

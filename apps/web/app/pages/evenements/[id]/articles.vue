@@ -154,8 +154,8 @@ async function removeEvent(): Promise<void> {
   <NuxtLayout name="event">
     <div class="articles">
       <header class="head">
-        <p class="event-name">{{ caisse.detail?.event.name ?? '…' }}</p>
         <h1>Articles</h1>
+        <p class="event-name">{{ caisse.detail?.event.name ?? '…' }}</p>
       </header>
 
       <p v-if="!online" role="note" class="card notice"><AppIcon name="offline" /> Connexion nécessaire pour modifier les articles. La caisse, elle, continue de marcher.</p>

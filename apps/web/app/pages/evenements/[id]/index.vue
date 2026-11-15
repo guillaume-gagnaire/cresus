@@ -170,6 +170,7 @@ const sales = computed(() => salesLabel(caisse.shown?.salesCount ?? 0));
   flex-direction: column;
   gap: 2px;
   padding: 0 4px;
+  margin-bottom: 18px;
 }
 h1 {
   font-size: 22px;
@@ -295,6 +296,8 @@ h1 {
 }
 .wide .grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* gros boutons sur le comptoir : environ trois rangées remplissent l'écran de la tablette */
+  grid-auto-rows: clamp(168px, calc((100dvh - 150px) / 3), 260px);
   gap: 14px;
   padding-bottom: 0;
 }
