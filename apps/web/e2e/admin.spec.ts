@@ -46,7 +46,7 @@ test('l’admin voit tous les comptes, leurs évènements et chiffres, et peut r
   await expect(shown).toHaveText(/^[a-z0-9]{12}$/);
   const password = (await shown.textContent())!;
   const check = await browser.newContext();
-  expect((await check.request.post('http://localhost:3000/api/auth/login', { data: { email, password } })).ok()).toBe(true);
+  expect((await check.request.post('/api/auth/login', { data: { email, password } })).ok()).toBe(true);
   await check.close();
 });
 

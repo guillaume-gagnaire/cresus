@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cresus
+      POSTGRES_PASSWORD: cresus
+      POSTGRES_DB: cresus
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cresus"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  app:
+    build: .
+    image: cresus
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://cresus:cresus@db:5432/cresus
+      # obligatoire, sans valeur par défaut (ex. SESSION_SECRET=$(openssl rand -hex 32) docker compose up)
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET requis}
+      # false pour l'essai local en http (un cookie Secure n'y serait pas renvoyé) ; true derrière HTTPS
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT:-30}
+      TZ: Europe/Paris
+    ports:
+      - "${APP_PORT:-3000}:3000"
+volumes:
+  db-data: {}
