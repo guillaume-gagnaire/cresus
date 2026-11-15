@@ -1,13 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import ExcelJS from 'exceljs';
+import type request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { type Agent, resetDb, setupTestApp, signedUpAgent } from './helpers.js';
 
-function binary(res: NodeJS.ReadableStream, callback: (err: Error | null, body: Buffer) => void): void {
+/** Parseur supertest qui garde le corps binaire tel quel. */
+function binary(res: request.Response, callback: (err: Error | null, body: Buffer) => void): void {
+  const stream = res as unknown as NodeJS.ReadableStream;
   const chunks: Buffer[] = [];
-  res.on('data', (chunk: Buffer) => chunks.push(chunk));
-  res.on('end', () => callback(null, Buffer.concat(chunks)));
+  stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+  stream.on('end', () => callback(null, Buffer.concat(chunks)));
 }
 
 const rowsOf = (sheet: ExcelJS.Worksheet): unknown[][] => {
@@ -54,7 +57,7 @@ describe('export Excel d’un évènement', () => {
     expect(res.headers['content-disposition']).toContain('filename="cresus-kermesse-2027-2026-06-20.xlsx"');
 
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(res.body as Buffer);
+    await workbook.xlsx.load(res.body as ArrayBuffer);
     expect(workbook.worksheets.map((s) => s.name)).toEqual(['Récapitulatif', 'Ventes', 'Par heure']);
 
     const recap = rowsOf(workbook.getWorksheet('Récapitulatif')!);
