@@ -30,6 +30,12 @@ export function useInstall() {
     started = true;
     installed.value = standalone() || readJson<boolean>(STORAGE.installed, false);
     dismissed.value = readJson<boolean>(STORAGE.installDismissed, false);
+    // annoncé avant le démarrage de l'appli : capté par le script du <head> (nuxt.config.ts)
+    const early = (window as Window & { __cresusInstallPrompt?: BeforeInstallPromptEvent }).__cresusInstallPrompt;
+    if (early) {
+      deferred.value = early;
+      installed.value = standalone();
+    }
     window.addEventListener('beforeinstallprompt', (event) => {
       event.preventDefault();
       deferred.value = event as BeforeInstallPromptEvent;

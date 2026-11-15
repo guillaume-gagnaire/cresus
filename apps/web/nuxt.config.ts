@@ -29,6 +29,14 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'apple-touch-icon', href: '/icons/maskable-512.png' },
       ],
+      // Chrome et Android annoncent qu'ils savent installer l'appli (« beforeinstallprompt ») parfois avant que Vue ait
+      // démarré : l'évènement est capté ici, dès le début de la page, et repris par useInstall()
+      script: [
+        {
+          innerHTML:
+            "window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__cresusInstallPrompt=e;});",
+        },
+      ],
     },
   },
   // PWA installable. Les pictos ne sont pas précachés (1,5 Mo) : mis en cache à la première vue, donc disponibles hors

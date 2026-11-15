@@ -47,6 +47,43 @@ describe('matchPicto', () => {
   });
 });
 
+describe('matchPicto tolère les fautes d’orthographe', () => {
+  it.each([
+    ['Gauffre', 'waffle'],
+    ['Gaufres maison', 'waffle'],
+    ['Sandwitch jambon', 'sandwich'],
+    ['Coka', 'cup-with-straw'],
+    ['Crèppe au sucre', 'pancakes'],
+    ['Chocollat chaud', 'hot-beverage'],
+    ['Capuccino', 'hot-beverage'],
+    ['Bierre', 'beer-mug'],
+    ['Frittes', 'french-fries'],
+    ['Tombolla', 'admission-tickets'],
+    ['Barbe a papas', 'lollipop'],
+    ['Pop corne', 'popcorn'],
+    ['Croissan', 'croissant'],
+    ['Pastèque fraiche', 'watermelon'],
+    ['Barbapapa', 'lollipop'],
+    ['Caramel au beurre salé', 'candy'],
+    ['Orangeade', 'cup-with-straw'],
+    ['Tartine', 'bread'],
+    ['Cake marbré', 'shortcake'],
+  ])('matchPicto(%j) = %s', (name, key) => {
+    expect(matchPicto(name)).toBe(key);
+  });
+
+  it.each([
+    ['Truc inconnu', 'label'],
+    ['Paon', 'label'],
+    ['Jus de pomme', 'beverage-box'],
+    ['Pêches', 'peach'],
+    ['Mars', 'chocolate-bar'],
+    ['Cartes postales', 'label'],
+  ])('reste exact quand il le faut : matchPicto(%j) = %s', (name, key) => {
+    expect(matchPicto(name)).toBe(key);
+  });
+});
+
 describe('catalogue', () => {
   it('a une centaine de pictos aux clés uniques, dont le générique', () => {
     const keys = PICTOS.map((p) => p.key);

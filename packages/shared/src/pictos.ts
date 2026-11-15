@@ -20,7 +20,7 @@ export const PICTOS: readonly Picto[] = [
   // Sucré
   p('pancakes', 'Crêpe', 'sucre', ['crêpe', 'galette', 'pancake', 'blini', 'nutella', 'crêpe party']),
   p('waffle', 'Gaufre', 'sucre', ['gaufre', 'waffle', 'gaufrette']),
-  p('shortcake', 'Part de gâteau', 'sucre', ['gâteau', 'part de gâteau', 'cake', 'fraisier', 'quatre-quarts', 'bûche', 'bûche de Noël', 'cheesecake', 'pâtisserie']),
+  p('shortcake', 'Part de gâteau', 'sucre', ['gâteau', 'part de gâteau', 'cake', 'fraisier', 'quatre-quarts', 'marbré', 'bûche', 'bûche de Noël', 'cheesecake', 'pâtisserie']),
   p('birthday-cake', 'Gâteau d’anniversaire', 'sucre', ['gâteau d’anniversaire', 'anniversaire', 'gâteau entier']),
   p('cupcake', 'Muffin', 'sucre', ['muffin', 'cupcake', 'madeleine', 'financier']),
   p('cookie', 'Cookie', 'sucre', ['cookie', 'biscuit', 'sablé', 'palmier', 'macaron']),
@@ -28,8 +28,8 @@ export const PICTOS: readonly Picto[] = [
   p('croissant', 'Viennoiserie', 'sucre', ['croissant', 'pain au chocolat', 'chocolatine', 'viennoiserie', 'pain au raisin', 'pain aux raisins', 'chausson aux pommes']),
   p('pie', 'Tarte', 'sucre', ['tarte', 'tartelette', 'quiche', 'tourte', 'clafoutis']),
   p('custard', 'Flan', 'sucre', ['flan', 'crème', 'dessert', 'panna cotta', 'crème brûlée', 'mousse au chocolat', 'yaourt', 'riz au lait']),
-  p('candy', 'Bonbons', 'sucre', ['bonbon', 'confiserie', 'haribo', 'dragibus', 'carambar', 'fraise tagada', 'guimauve', 'chamallow', 'réglisse', 'sachet de bonbons']),
-  p('lollipop', 'Sucette', 'sucre', ['sucette', 'barbe à papa', 'sucre d’orge', 'lollipop']),
+  p('candy', 'Bonbons', 'sucre', ['bonbon', 'caramel', 'confiserie', 'haribo', 'dragibus', 'carambar', 'fraise tagada', 'guimauve', 'chamallow', 'réglisse', 'sachet de bonbons']),
+  p('lollipop', 'Sucette', 'sucre', ['sucette', 'barbe à papa', 'barbapapa', 'sucre d’orge', 'lollipop']),
   p('chocolate-bar', 'Chocolat', 'sucre', ['chocolat', 'barre chocolatée', 'kinder', 'mars', 'twix', 'brownie', 'tablette']),
   p('soft-ice-cream', 'Glace', 'sucre', ['glace', 'cornet', 'sorbet', 'esquimau', 'magnum', 'glace à l’italienne', 'cône', 'mister freeze']),
   p('ice-cream', 'Coupe glacée', 'sucre', ['coupe glacée', 'sundae', 'banana split']),
@@ -47,7 +47,7 @@ export const PICTOS: readonly Picto[] = [
   p('potato', 'Chips', 'sale', ['chips', 'pomme de terre', 'pommes de terre']),
   p('pizza', 'Pizza', 'sale', ['pizza', 'part de pizza', 'calzone', 'pissaladière']),
   p('baguette-bread', 'Baguette', 'sale', ['baguette', 'demi-baguette', 'flûte']),
-  p('bread', 'Pain', 'sale', ['pain', 'brioche', 'pain de mie', 'pain d’épice', 'fougasse']),
+  p('bread', 'Pain', 'sale', ['pain', 'brioche', 'tartine', 'pain de mie', 'pain d’épice', 'fougasse']),
   p('pretzel', 'Bretzel', 'sale', ['bretzel', 'pretzel']),
   p('bagel', 'Bagel', 'sale', ['bagel']),
   p('stuffed-flatbread', 'Kebab', 'sale', ['kebab', 'kebap', 'gyros', 'pita']),
@@ -76,7 +76,7 @@ export const PICTOS: readonly Picto[] = [
 
   // Boissons
   p('droplet', 'Eau', 'boisson', ['eau', 'eau minérale', 'eau gazeuse', 'eau plate', 'cristaline', 'évian', 'vittel', 'perrier', 'badoit', 'volvic']),
-  p('cup-with-straw', 'Soda', 'boisson', ['soda', 'coca', 'coca-cola', 'cola', 'pepsi', 'fanta', 'sprite', 'orangina', 'ice tea', 'thé glacé', 'limonade', 'schweppes', 'canette', 'boisson', 'boisson fraîche', 'sirop', 'diabolo', 'grenadine', 'citronnade', 'smoothie', 'menthe à l’eau']),
+  p('cup-with-straw', 'Soda', 'boisson', ['soda', 'coca', 'coka', 'coca-cola', 'cola', 'pepsi', 'fanta', 'sprite', 'orangina', 'ice tea', 'thé glacé', 'limonade', 'schweppes', 'canette', 'boisson', 'boisson fraîche', 'sirop', 'diabolo', 'grenadine', 'citronnade', 'orangeade', 'smoothie', 'menthe à l’eau']),
   p('beverage-box', 'Jus de fruits', 'boisson', ['jus', 'jus de fruits', 'capri-sun', 'caprisun', 'oasis', 'tropico', 'brique', 'pressé']),
   p('hot-beverage', 'Café', 'boisson', ['café', 'expresso', 'espresso', 'cappuccino', 'chocolat chaud', 'boisson chaude', 'mug', 'déca']),
   p('teacup-without-handle', 'Thé', 'boisson', ['thé', 'infusion', 'tisane']),
@@ -85,7 +85,7 @@ export const PICTOS: readonly Picto[] = [
   p('wine-glass', 'Vin', 'boisson', ['vin', 'vin chaud', 'rosé', 'vin rouge', 'vin blanc', 'verre de vin', 'bordeaux']),
   p('bottle-with-popping-cork', 'Champagne', 'boisson', ['champagne', 'crémant', 'mousseux', 'prosecco', 'cidre', 'bulles']),
   p('tropical-drink', 'Cocktail', 'boisson', ['cocktail', 'punch', 'sangria', 'mojito', 'spritz', 'piña colada', 'cocktail sans alcool']),
-  p('cocktail-glass', 'Apéritif', 'boisson', ['kir', 'apéritif', 'apéro', 'martini']),
+  p('cocktail-glass', 'Apéritif', 'boisson', ['kir', 'apéritif', 'apéro', 'martini', 'pastis']),
   p('bubble-tea', 'Bubble tea', 'boisson', ['bubble tea']),
   p('ice', 'Glaçons', 'boisson', ['glaçon', 'sac de glaçons']),
 
@@ -197,32 +197,102 @@ function keywordIndex(): IndexEntry[] {
   return index;
 }
 
-function startsAt(haystack: string[], needle: string[], start: number): boolean {
-  return needle.every((word, i) => haystack[start + i] === word);
+/** Lettres doublées ramenées à une seule : « gauffre » → « gaufre », « cappuccino » → « capucino ». */
+const collapse = (word: string): string => word.replace(/(.)\1+/g, '$1');
+
+/** Fautes admises pour un mot : aucune jusqu'à 4 lettres (trop de faux amis : paon/pain), une jusqu'à 8, deux au-delà. */
+const tolerance = (length: number): number => (length >= 9 ? 2 : length >= 5 ? 1 : 0);
+
+/** Distance de Damerau-Levenshtein (insertion, suppression, substitution, inversion de deux lettres voisines), arrêtée au-delà de `max`. */
+function editDistance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  const rows: number[][] = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array<number>(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) rows[0]![j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    let rowMin = Infinity;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let value = Math.min(rows[i - 1]![j]! + 1, rows[i]![j - 1]! + 1, rows[i - 1]![j - 1]! + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) value = Math.min(value, rows[i - 2]![j - 2]! + 1);
+      rows[i]![j] = value;
+      rowMin = Math.min(rowMin, value);
+    }
+    if (rowMin > max) return max + 1;
+  }
+  return rows[a.length]![b.length]!;
+}
+
+/** Fautes entre un mot du nom et un mot d'un mot-clé (lettres doublées ignorées), ou null au-delà de la tolérance. */
+function typos(token: string, keyword: string): number | null {
+  if (token === keyword) return 0;
+  const a = collapse(token);
+  const b = collapse(keyword);
+  const max = tolerance(Math.max(a.length, b.length));
+  if (a === b) return 0;
+  // une faute de frappe touche rarement la première lettre ; l'exiger évite les faux amis (« cartes » ≠ « tartes »)
+  if (max === 0 || a[0] !== b[0]) return null;
+  if (Math.max(a.length, b.length) < 7) {
+    // mots courts : une lettre remplacée ou deux lettres inversées, ou une lettre en trop / en moins à la fin seulement
+    // (« kebabe », « champagn ») ; une lettre ajoutée au milieu fait trop de faux amis (« carte » ≠ « carotte »)
+    if (a.length === b.length) return editDistance(a, b, 1) <= 1 ? 1 : null;
+    const [short, long] = a.length < b.length ? [a, b] : [b, a];
+    return long.length - short.length === 1 && long.startsWith(short) ? 1 : null;
+  }
+  const distance = editDistance(a, b, max);
+  return distance <= max ? distance : null;
+}
+
+interface Match {
+  length: number;
+  distance: number;
+  start: number;
+  order: number;
+  key: string;
+}
+
+/** Meilleure correspondance : plus de mots, puis moins de fautes, puis plus tôt dans le nom, puis l'ordre du catalogue. */
+function better(candidate: Match, best: Match | null): boolean {
+  if (!best) return true;
+  if (candidate.length !== best.length) return candidate.length > best.length;
+  if (candidate.distance !== best.distance) return candidate.distance < best.distance;
+  if (candidate.start !== best.start) return candidate.start < best.start;
+  return candidate.order < best.order;
+}
+
+/** Cherche les mots-clés dans le nom ; `exact` : mot pour mot, sinon avec quelques fautes de frappe par mot. */
+function findMatch(tokens: string[], exact: boolean): Match | null {
+  let best: Match | null = null;
+  for (const entry of keywordIndex()) {
+    const length = entry.words.length;
+    if (length === 0) continue;
+    for (let start = 0; start + length <= tokens.length; start++) {
+      let distance = 0;
+      const found = entry.words.every((word, i) => {
+        const token = tokens[start + i]!;
+        if (exact) return token === word;
+        const d = typos(token, word);
+        if (d === null) return false;
+        distance += d;
+        return true;
+      });
+      if (!found) continue;
+      const candidate = { length, distance, start, order: entry.order, key: entry.key };
+      if (better(candidate, best)) best = candidate;
+      break;
+    }
+  }
+  return best;
 }
 
 /**
  * Picto déduit du nom d'un article. Parmi les mots-clés présents (suite de mots contiguë, au singulier), l'emporte
  * celui qui a le plus de mots (« pain au chocolat » plutôt que « pain »), puis celui qui commence le plus tôt dans le nom
- * (« jus de pomme » → jus), puis l'ordre du catalogue. Rien ne correspond : picto générique.
+ * (« jus de pomme » → jus), puis l'ordre du catalogue. Sans correspondance exacte, les fautes de frappe sont tolérées
+ * (« gauffre », « sandwitch », « capuccino ») ; rien ne correspond : picto générique.
  */
 export function matchPicto(name: string): string {
   const tokens = words(name);
-  let best: { length: number; start: number; order: number; key: string } | null = null;
-  for (const entry of keywordIndex()) {
-    const length = entry.words.length;
-    if (length === 0) continue;
-    for (let start = 0; start + length <= tokens.length; start++) {
-      if (!startsAt(tokens, entry.words, start)) continue;
-      const better =
-        !best ||
-        length > best.length ||
-        (length === best.length && (start < best.start || (start === best.start && entry.order < best.order)));
-      if (better) best = { length, start, order: entry.order, key: entry.key };
-      break;
-    }
-  }
-  return best?.key ?? FALLBACK_PICTO;
+  return (findMatch(tokens, true) ?? findMatch(tokens, false))?.key ?? FALLBACK_PICTO;
 }
 
 /** Pictos dont chaque mot de la recherche est le début d'un mot du libellé ou d'un mot-clé ; recherche vide : tous. */
