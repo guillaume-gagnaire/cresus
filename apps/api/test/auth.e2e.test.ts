@@ -23,7 +23,7 @@ describe('compte de l’asso : inscription et connexion', () => {
     expect(res.body).toMatchObject({ email: 'ape@ecole.fr', name: 'APE Jules Ferry' });
     expect(res.headers['set-cookie']?.[0]).toMatch(/^cresus_session=.*HttpOnly/);
     const me = await agent.get('/api/auth/me').expect(200);
-    expect(me.body).toEqual({ id: res.body.id, email: 'ape@ecole.fr', name: 'APE Jules Ferry' });
+    expect(me.body).toEqual({ id: res.body.id, email: 'ape@ecole.fr', name: 'APE Jules Ferry', isAdmin: false });
   });
 
   it('refuse un email déjà pris, quelle que soit la casse', async () => {

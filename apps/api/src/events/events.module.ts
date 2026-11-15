@@ -14,6 +14,6 @@ import { LiveGateway } from '../live/live.gateway.js';
 @Module({
   controllers: [EventsController, ArticlesController, SalesController, ExportController],
   providers: [EventsService, ArticlesService, SummaryService, SalesService, ExportService, LiveBus, LiveGateway],
-  exports: [EventsService, SummaryService],
+  exports: [EventsService, SummaryService, ExportService],
 })
 export class EventsModule {}

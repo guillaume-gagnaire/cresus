@@ -10,6 +10,8 @@ export interface AccountDto {
   id: string;
   email: string;
   name: string;
+  /** Administrateur de l'instance (email listé dans ADMIN_EMAILS) : accès au panneau d'admin. */
+  isAdmin: boolean;
 }
 
 export interface EventDto {
@@ -104,6 +106,32 @@ export interface PresenceDto {
   eventId: string;
   /** Appareils connectés à la caisse de cet évènement. */
   devices: number;
+}
+
+/** Panneau d'admin (`/api/admin`, réservé aux emails de ADMIN_EMAILS). */
+export interface AdminStatsDto {
+  accounts: number;
+  events: number;
+  salesCount: number;
+  revenueCents: number;
+  salesLast7Days: number;
+}
+
+export interface AdminAccountDto {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  eventsCount: number;
+  salesCount: number;
+  revenueCents: number;
+  /** Dernière vente du compte (ISO), ou null. */
+  lastSaleAt: string | null;
+}
+
+export interface AdminAccountDetailDto {
+  account: AdminAccountDto;
+  events: EventDto[];
 }
 
 /** Bornes communes à l'API et aux formulaires. */

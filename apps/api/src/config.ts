@@ -8,6 +8,7 @@ const envSchema = z.object({
   COOKIE_SECURE: z.enum(['true', 'false']).optional(),
   WEB_DIST: z.string().optional(),
   AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(30),
+  ADMIN_EMAILS: z.string().optional(),
 });
 
 export interface AppConfig {
@@ -19,6 +20,8 @@ export interface AppConfig {
   webDist: string | null;
   /** Requêtes par minute et par IP sur /api/auth/* (30 par défaut : un rush de bénévoles sur le même wifi passe). */
   authRateLimit: number;
+  /** Emails (en minuscules) des administrateurs de l'instance : accès au panneau d'admin. */
+  adminEmails: string[];
 }
 
 export const CONFIG = Symbol('CONFIG');
@@ -42,5 +45,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     cookieSecure: e.COOKIE_SECURE ? e.COOKIE_SECURE === 'true' : production,
     webDist: e.WEB_DIST ? e.WEB_DIST : null,
     authRateLimit: e.AUTH_RATE_LIMIT,
+    adminEmails: (e.ADMIN_EMAILS ?? '')
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
   };
 }
