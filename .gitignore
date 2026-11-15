@@ -12,3 +12,5 @@ test-results/
 !.env.example
 !apps/api/.env.e2e
 .superpowers/
+.impeccable/review/
+apps/web/.impeccable/review/

@@ -156,10 +156,9 @@ h2 {
   min-width: 0;
   font-size: 16px;
   font-weight: 800;
+  line-height: 1.2;
   color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .price {
   font-size: 15px;
