@@ -65,9 +65,16 @@ export class AuthService {
     await this.db.update(accounts).set({ passwordHash: await hashPassword(next) }).where(eq(accounts.id, accountId));
   }
 
-  /** Supprime le compte et, en cascade, ses sessions, évènements, articles et ventes. */
+  /**
+   * Supprime le compte et, en cascade, ses sessions, évènements, articles et ventes. Pas un compte d'admin : son email
+   * (listé dans ADMIN_EMAILS) redeviendrait libre, et le premier venu qui s'inscrirait avec deviendrait admin.
+   */
   async deleteAccount(accountId: string, password: string): Promise<void> {
     await this.checkPassword(accountId, password);
+    const [row] = await this.db.select({ email: accounts.email }).from(accounts).where(eq(accounts.id, accountId));
+    if (row && this.config.adminEmails.includes(row.email)) {
+      throw new AppError(403, 'ADMIN_SELF_DELETE', 'Le compte administrateur ne peut pas être supprimé : retirez d’abord son email de ADMIN_EMAILS.');
+    }
     await this.db.delete(accounts).where(eq(accounts.id, accountId));
   }
 

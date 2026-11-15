@@ -1,6 +1,7 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { AppErrorFilter } from '../src/common/error.filter.js';
 import { loadConfig } from '../src/config.js';
 import { setupTestApp } from './helpers.js';
 
@@ -35,6 +36,16 @@ describe('durcissements', () => {
   it('laisse passer un DELETE sans corps (aucun formulaire ne peut l’envoyer), refuse un PUT qui n’est pas en JSON', async () => {
     await request(app.getHttpServer()).delete('/api/events/00000000-0000-4000-8000-000000000000').expect(401);
     await request(app.getHttpServer()).put('/api/events/x/articles/order').set('Content-Type', 'text/plain').send('x').expect(415);
+  });
+
+  it('parle aux bénévoles en les vouvoyant, même dans les erreurs génériques', async () => {
+    const filter = new AppErrorFilter(true);
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn().mockReturnThis() };
+    const host = { switchToHttp: () => ({ getResponse: () => res }) } as unknown as Parameters<AppErrorFilter['catch']>[1];
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    filter.catch(new Error('boom'), host);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'Une erreur est survenue. Réessayez dans un instant.' }));
+    vi.restoreAllMocks();
   });
 
   it('répond 404 en JSON sur une route inconnue', async () => {

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { AdminService } from '../src/admin/admin.service.js';
 import { type Agent, agentFor, eventWithArticles, resetDb, setupTestApp, signedUpAgent } from './helpers.js';
 
 const ADMIN = 'admin@cresus.test';
@@ -80,6 +81,16 @@ describe('panneau d’admin', () => {
     expect(res.body.password).toMatch(/^[a-z0-9]{12}$/);
     await ape.get('/api/auth/me').expect(401);
     await agentFor(app).post('/api/auth/login').send({ email: 'ape@ecole.fr', password: res.body.password }).expect(200);
+  });
+
+  it('ne laisse pas l’admin supprimer son propre compte depuis les réglages (l’email resterait libre pour un autre)', async () => {
+    const res = await admin.delete('/api/account').send({ password: 'kermesse2027' }).expect(403);
+    expect(res.body.code).toBe('ADMIN_SELF_DELETE');
+    await admin.get('/api/auth/me').expect(200);
+  });
+
+  it('signale les emails d’admin sans compte (à créer avant de les déclarer)', async () => {
+    expect(await app.get(AdminService).missingAdmins()).toEqual(['autre-admin@cresus.test']);
   });
 
   it('supprime un compte, mais pas le sien', async () => {

@@ -42,10 +42,13 @@ async function request<T>(method: Method, path: string, body?: unknown, options:
     throw new ApiError(0, 'OFFLINE', OFFLINE_MESSAGE);
   }
   if (res.status === 204) return undefined as T;
-  const data = (await res.json().catch(() => null)) as (ApiErrorBody & T) | null;
+  const json = (res.headers.get('content-type') ?? '').includes('application/json');
+  const data = json ? ((await res.json().catch(() => null)) as (ApiErrorBody & T) | null) : null;
+  // Une réponse qui ne vient pas de l'API (pas de JSON, ou pas d'erreur de l'API) : le proxy répond à sa place pendant
+  // un redémarrage (Traefik : « 404 page not found », 502–504) ou une page de maintenance. Traitée comme hors ligne,
+  // jamais comme « introuvable » : la caisse garde ses ventes en attente et réessaie.
+  if ((res.ok && !json) || (!res.ok && typeof data?.code !== 'string')) throw new ApiError(0, 'OFFLINE', OFFLINE_MESSAGE);
   if (!res.ok) {
-    // un proxy qui répond 502/503/504 pendant un redéploiement ou une coupure : traité comme hors ligne
-    if (res.status >= 502 && res.status <= 504) throw new ApiError(0, 'OFFLINE', OFFLINE_MESSAGE);
     if (res.status === 401 && !path.startsWith('/auth/') && !options.quiet401) window.dispatchEvent(new Event(UNAUTHENTICATED_EVENT));
     throw new ApiError(res.status, data?.code ?? 'UNKNOWN', data?.message ?? FALLBACK);
   }

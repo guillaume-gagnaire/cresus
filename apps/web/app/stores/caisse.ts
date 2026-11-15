@@ -55,6 +55,13 @@ export const useCaisseStore = defineStore('caisse', () => {
   );
   watch(ops, (next) => accountId && writeJson(queueKey(accountId), next), { deep: true });
 
+  // le cache suit les derniers compteurs connus (envoi, temps réel), pas seulement ceux de l'ouverture : hors ligne, un
+  // changement d'écran ou un redémarrage de l'appli repart de là
+  watch(server, (summary) => {
+    const current = detail.value;
+    if (summary && current && accountId && summary.eventId === current.event.id) writeJson(cacheKey(accountId, current.event.id), { ...current, summary });
+  });
+
   const articles = computed<ArticleDto[]>(() => (detail.value?.articles ?? []).filter((a) => !a.archived));
   const onSale = computed(() => articles.value.filter((a) => a.onSale));
   const shown = computed<SummaryDto | null>(() => (server.value ? applyPending(server.value, ops.value) : null));
@@ -77,13 +84,18 @@ export const useCaisseStore = defineStore('caisse', () => {
     }
   }
 
-  /** Ouvre la caisse d'un évènement : d'abord ce que l'appareil sait, puis le serveur et le temps réel. */
+  /**
+   * Ouvre la caisse d'un évènement : d'abord ce que l'appareil sait (en mémoire si on revient d'un autre écran du même
+   * évènement, sinon le cache), puis le serveur et le temps réel.
+   */
   async function open(id: string): Promise<void> {
     eventId.value = id;
     lastSale.value = null;
-    const cached = accountId ? readJson<EventDetailDto | null>(cacheKey(accountId, id), null) : null;
-    detail.value = cached;
-    server.value = cached?.summary ?? null;
+    if (detail.value?.event.id !== id) {
+      const cached = accountId ? readJson<EventDetailDto | null>(cacheKey(accountId, id), null) : null;
+      detail.value = cached;
+      server.value = cached?.summary ?? null;
+    }
     connectLive();
     retry ??= setInterval(() => {
       if (ops.value.length > 0) void flush();
@@ -133,7 +145,7 @@ export const useCaisseStore = defineStore('caisse', () => {
     if (!(error instanceof ApiError)) return;
     if (error.offline) state.value = 'offline';
     else if (error.status === 401) state.value = 'auth';
-    else if (error.status === 404) {
+    else if (error.status === 404 && error.code === 'NOT_FOUND') {
       // évènement supprimé (depuis un autre appareil) : ses ventes en attente ne pourront jamais partir
       ops.value = ops.value.filter((op) => op.eventId !== id);
       if (eventId.value === id) {
@@ -154,6 +166,8 @@ export const useCaisseStore = defineStore('caisse', () => {
       for (const op of batch) inFlight.add(op.id);
       try {
         const res = await api.post<SyncResponse>(`/events/${target}/sync`, { ops: toSyncOps(batch) }, { quiet401: true });
+        // ne retirer les ventes de la file que sur une vraie réponse de l'API
+        if (!res?.summary) throw new ApiError(0, 'OFFLINE', 'Réponse inattendue du serveur.');
         const sent = new Set(batch);
         ops.value = ops.value.filter((op) => !sent.has(op));
         if (target === eventId.value) server.value = res.summary;

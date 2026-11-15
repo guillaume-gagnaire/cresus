@@ -104,3 +104,46 @@ test('évènement supprimé ailleurs pendant que des ventes attendent : la file 
   const queue = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('cresus:queue:')).map((k) => localStorage.getItem(k)));
   expect(queue.every((raw) => raw === null || raw === '[]')).toBe(true);
 });
+
+test('un 404 ou une page HTML du proxy (appli qui redémarre) ne fait pas perdre les ventes en attente', async ({ page }) => {
+  await freshAccount(page);
+  const { eventId } = await eventWithArticles(page, [['Crêpe', 250]]);
+  await page.goto(`/evenements/${eventId}`);
+  await expect(pill(page)).toHaveText(/À jour/);
+
+  // Traefik répond « 404 page not found » en texte brut tant que le conteneur n'est pas sain
+  await page.route('**/api/events/**', (route) => route.fulfill({ status: 404, contentType: 'text/plain', body: '404 page not found' }));
+  await tile(page, 'Crêpe').click();
+  await expect(pill(page)).toHaveText(/1 en attente/);
+  await page.waitForTimeout(1500);
+  await expect(page).toHaveURL(new RegExp(`/evenements/${eventId}$`));
+  await expect(count(page, 'Crêpe')).toHaveText('1');
+
+  // puis une page HTML en 200 (repli d'un proxy mal réglé) : toujours rien de perdu
+  await page.unroute('**/api/events/**');
+  await page.route('**/api/events/*/sync', (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Maintenance</title>' }));
+  await tile(page, 'Crêpe').click();
+  await expect(pill(page)).toHaveText(/2 en attente/);
+
+  await page.unroute('**/api/events/*/sync');
+  await expect(pill(page)).toHaveText(/À jour/, { timeout: 15_000 });
+  expect(await serverCount(page, eventId)).toBe(2);
+});
+
+test('hors ligne, changer d’écran garde les derniers compteurs connus', async ({ page, context }) => {
+  await freshAccount(page);
+  const { eventId } = await eventWithArticles(page, [['Crêpe', 250]]);
+  await page.goto(`/evenements/${eventId}`);
+  await tile(page, 'Crêpe').click();
+  await tile(page, 'Crêpe').click();
+  await tile(page, 'Crêpe').click();
+  await expect.poll(() => serverCount(page, eventId)).toBe(3);
+  await expect(pill(page)).toHaveText(/À jour/);
+
+  await context.setOffline(true);
+  await page.getByRole('link', { name: 'Bilan', exact: true }).click();
+  await page.getByRole('link', { name: 'Caisse', exact: true }).click();
+  await expect(count(page, 'Crêpe')).toHaveText('3');
+  await expect(total(page)).toHaveText(euros('7,50 €'));
+  await context.setOffline(false);
+});

@@ -127,6 +127,6 @@ describe('limite de débit sur /api/auth', () => {
     }
     for (let i = 0; i < 4; i++) await http().post('/api/auth/login').send({ email: 'ape@ecole.fr', password: 'kermesse2027' });
     const blocked = await http().post('/api/auth/login').send({ email: 'ape@ecole.fr', password: 'kermesse2027' }).expect(429);
-    expect(blocked.body.code).toBe('TOO_MANY_REQUESTS');
+    expect(blocked.body).toMatchObject({ code: 'TOO_MANY_REQUESTS', message: 'Trop de tentatives. Réessayez dans une minute.' });
   });
 });

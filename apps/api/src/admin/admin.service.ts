@@ -1,8 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import type { AdminAccountDetailDto, AdminAccountDto, AdminStatsDto, EventDetailDto } from '@cresus/shared';
-import { and, countDistinct, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm';
+import { and, countDistinct, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
 import { AppError, notFound } from '../common/app-error.js';
 import { resetPassword } from '../cli/reset-password-core.js';
+import { type AppConfig, CONFIG } from '../config.js';
 import { DB, type Db } from '../db/db.module.js';
 import { accounts, events, sales } from '../db/schema.js';
 import { EventsService } from '../events/events.service.js';
@@ -14,12 +15,31 @@ const EVENT = 'Évènement';
 const int = (value: unknown): number => Number(value ?? 0);
 
 @Injectable()
-export class AdminService {
+export class AdminService implements OnApplicationBootstrap {
   constructor(
+    @Inject(CONFIG) private readonly config: AppConfig,
     @Inject(DB) private readonly db: Db,
     private readonly events: EventsService,
     private readonly exports: ExportService,
   ) {}
+
+  /**
+   * Emails de ADMIN_EMAILS sans compte : tant qu'ils le restent, le premier qui s'inscrit avec l'un d'eux devient admin.
+   * Signalés au démarrage ; créez le compte avant de déclarer son email.
+   */
+  async missingAdmins(): Promise<string[]> {
+    if (this.config.adminEmails.length === 0) return [];
+    const found = await this.db.select({ email: accounts.email }).from(accounts).where(inArray(accounts.email, this.config.adminEmails));
+    const existing = new Set(found.map((row) => row.email));
+    return this.config.adminEmails.filter((email) => !existing.has(email));
+  }
+
+  async onApplicationBootstrap(): Promise<void> {
+    const missing = await this.missingAdmins();
+    if (missing.length > 0) {
+      new Logger('Admin').warn(`ADMIN_EMAILS sans compte : ${missing.join(', ')}. Créez ces comptes au plus vite : le premier qui s'inscrirait avec l'un de ces emails deviendrait admin.`);
+    }
+  }
 
   async stats(): Promise<AdminStatsDto> {
     const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000);

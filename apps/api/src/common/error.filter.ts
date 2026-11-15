@@ -37,7 +37,7 @@ export class AppErrorFilter implements ExceptionFilter {
     }
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
-      const message = status === 404 ? 'Introuvable.' : status === 429 ? 'Trop de tentatives. Réessaie dans une minute.' : 'Requête invalide.';
+      const message = status === 404 ? 'Introuvable.' : status === 429 ? 'Trop de tentatives. Réessayez dans une minute.' : 'Requête invalide.';
       const code = status === 404 ? 'NOT_FOUND' : status === 429 ? 'TOO_MANY_REQUESTS' : 'HTTP_ERROR';
       res.status(status).json({ statusCode: status, code, message });
       return;
@@ -45,6 +45,6 @@ export class AppErrorFilter implements ExceptionFilter {
     const detail = describeError(exception);
     if (this.logToConsole) console.error(`[Errors] ${detail}`);
     else this.logger.error(detail);
-    res.status(500).json({ statusCode: 500, code: 'INTERNAL', message: 'Une erreur est survenue. Réessaie dans un instant.' });
+    res.status(500).json({ statusCode: 500, code: 'INTERNAL', message: 'Une erreur est survenue. Réessayez dans un instant.' });
   }
 }
