@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.output/
+.nuxt/
+.data/
+coverage/
+playwright-report/
+test-results/
+*.log
+.env
+.env.*
+!.env.example
+!apps/api/.env.e2e
+.superpowers/

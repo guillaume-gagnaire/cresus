@@ -1,0 +1,22 @@
+{
+  "name": "cresus",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=24.11"
+  },
+  "scripts": {
+    "build": "npm run build -w @cresus/shared && npm run build -w @cresus/web --if-present && npm run build -w @cresus/api --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev": "npm run build -w @cresus/shared && concurrently -k -n api,web \"npm run dev -w @cresus/api\" \"npm run dev -w @cresus/web\"",
+    "pictos": "npm run build -w @cresus/shared && node scripts/build-pictos.mjs",
+    "e2e:prod": "node scripts/e2e-prod.mjs"
+  },
+  "devDependencies": {
+    "@iconify-json/fluent-emoji": "^1.2.7",
+    "concurrently": "^10.0.5"
+  }
+}
