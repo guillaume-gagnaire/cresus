@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 
-const MUTATIONS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+// DELETE exempté : aucun formulaire HTML ne peut l'envoyer, et un fetch cross-origin DELETE passe par un preflight CORS
+const MUTATIONS = new Set(['POST', 'PUT', 'PATCH']);
 
 /**
  * Protection CSRF : les mutations sur /api exigent un Content-Type JSON (impossible en simple formulaire cross-site).

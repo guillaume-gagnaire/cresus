@@ -3,6 +3,7 @@ import { type DynamicModule, Logger, Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module.js';
 import { type AppConfig, CONFIG } from './config.js';
 import { DbModule } from './db/db.module.js';
+import { EventsModule } from './events/events.module.js';
 import { FrontService } from './front/front.service.js';
 import { HealthController } from './health/health.controller.js';
 
@@ -14,7 +15,7 @@ export class AppModule {
     return {
       module: AppModule,
       global: true,
-      imports: [DbModule, AuthModule],
+      imports: [DbModule, AuthModule, EventsModule],
       controllers: [HealthController],
       // le front (build Nuxt) est servi avec repli SPA, après les routes : /api n'est jamais intercepté
       providers: [{ provide: CONFIG, useValue: config }, ...(serveFront ? [FrontService] : [])],

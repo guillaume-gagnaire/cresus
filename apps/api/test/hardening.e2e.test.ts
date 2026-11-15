@@ -25,6 +25,11 @@ describe('durcissements', () => {
     expect(res.body.code).toBe('JSON_REQUIRED');
   });
 
+  it('laisse passer un DELETE sans corps (aucun formulaire ne peut l’envoyer), refuse un PUT qui n’est pas en JSON', async () => {
+    await request(app.getHttpServer()).delete('/api/events/00000000-0000-4000-8000-000000000000').expect(401);
+    await request(app.getHttpServer()).put('/api/events/x/articles/order').set('Content-Type', 'text/plain').send('x').expect(415);
+  });
+
   it('répond 404 en JSON sur une route inconnue', async () => {
     const res = await request(app.getHttpServer()).get('/api/nope').expect(404);
     expect(res.body).toMatchObject({ statusCode: 404, code: 'NOT_FOUND' });

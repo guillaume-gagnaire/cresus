@@ -27,3 +27,22 @@ export async function resetDb(app: NestExpressApplication): Promise<void> {
 
 /** Agent supertest qui conserve les cookies. */
 export const agentFor = (app: NestExpressApplication) => request.agent(app.getHttpServer());
+
+/** Agent connecté à une asso fraîchement inscrite. */
+export async function signedUpAgent(app: NestExpressApplication, email = 'ape@ecole.fr') {
+  const agent = agentFor(app);
+  await agent.post('/api/auth/signup').send({ name: `APE ${email}`, email, password: 'kermesse2027' }).expect(201);
+  return agent;
+}
+
+export type Agent = Awaited<ReturnType<typeof signedUpAgent>>;
+
+/** Évènement « Kermesse 2027 » avec ses articles (nom, prix en centimes). */
+export async function eventWithArticles(agent: Agent, articles: Array<[string, number]> = [], name = 'Kermesse 2027') {
+  const event = (await agent.post('/api/events').send({ name, date: '2027-06-20' }).expect(201)).body as { id: string };
+  const ids: string[] = [];
+  for (const [articleName, priceCents] of articles) {
+    ids.push((await agent.post(`/api/events/${event.id}/articles`).send({ name: articleName, priceCents }).expect(201)).body.id as string);
+  }
+  return { eventId: event.id, articleIds: ids };
+}
