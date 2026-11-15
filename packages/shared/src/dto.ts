@@ -91,6 +91,21 @@ export interface SalesPageDto {
   next: string | null;
 }
 
+/**
+ * Temps réel (socket.io, chemin `/api/socket.io`) : l'appareil envoie `join` { eventId } (réponse LiveJoinAck) ;
+ * le serveur émet à la salle de l'évènement `summary` (SummaryDto, après chaque envoi de ventes),
+ * `changed` { eventId } (articles ou évènement modifiés : recharger le détail) et `presence` (PresenceDto).
+ */
+export const LIVE_PATH = '/api/socket.io';
+
+export type LiveJoinAck = { ok: true; summary: SummaryDto; devices: number } | { ok: false; code: 'NOT_FOUND' };
+
+export interface PresenceDto {
+  eventId: string;
+  /** Appareils connectés à la caisse de cet évènement. */
+  devices: number;
+}
+
 /** Bornes communes à l'API et aux formulaires. */
 export const LIMITS = {
   articleName: 40,

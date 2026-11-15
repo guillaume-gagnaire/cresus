@@ -4,6 +4,7 @@ import { and, desc, eq, isNull, lt, or } from 'drizzle-orm';
 import { AppError } from '../common/app-error.js';
 import { DB, type Db } from '../db/db.module.js';
 import { articles, sales } from '../db/schema.js';
+import { LiveBus } from '../live/live.bus.js';
 import { EventsService } from './events.service.js';
 import { SummaryService } from './summary.service.js';
 
@@ -43,6 +44,7 @@ export class SalesService {
     @Inject(DB) private readonly db: Db,
     private readonly events: EventsService,
     private readonly summaries: SummaryService,
+    private readonly live: LiveBus,
   ) {}
 
   /**
@@ -80,6 +82,7 @@ export class SalesService {
       }
       return this.summaries.summary(event.id, tx as unknown as Db);
     });
+    this.live.summary(summary);
     return { applied, rejected, summary };
   }
 

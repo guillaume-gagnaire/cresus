@@ -4,6 +4,7 @@ import { and, asc, desc, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
 import { notFound } from '../common/app-error.js';
 import { DB, type Db } from '../db/db.module.js';
 import { type EventRow, articles, events, sales } from '../db/schema.js';
+import { LiveBus } from '../live/live.bus.js';
 import { toArticleDto, toEventDto } from './mappers.js';
 import { uuidParam } from './schemas.js';
 import { SummaryService } from './summary.service.js';
@@ -15,6 +16,7 @@ export class EventsService {
   constructor(
     @Inject(DB) private readonly db: Db,
     private readonly summaries: SummaryService,
+    private readonly live: LiveBus,
   ) {}
 
   /** L'évènement s'il appartient au compte, sinon 404 (aussi pour un identifiant qui n'est pas un UUID). */
@@ -72,11 +74,13 @@ export class EventsService {
     const event = await this.requireEvent(accountId, eventId);
     const values = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
     const [row] = Object.keys(values).length > 0 ? await this.db.update(events).set(values).where(eq(events.id, event.id)).returning() : [event];
+    this.live.changed(event.id);
     return toEventDto(row!, await this.summaries.summary(event.id));
   }
 
   async remove(accountId: string, eventId: string): Promise<void> {
     const event = await this.requireEvent(accountId, eventId);
     await this.db.delete(events).where(eq(events.id, event.id));
+    this.live.changed(event.id);
   }
 }

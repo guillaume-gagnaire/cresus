@@ -19,6 +19,8 @@
     "@nestjs/common": "^12.5.0",
     "@nestjs/core": "^12.5.0",
     "@nestjs/platform-express": "^12.5.0",
+    "@nestjs/platform-socket.io": "^12.5.0",
+    "@nestjs/websockets": "^12.5.0",
     "@node-rs/argon2": "^2.2.1",
     "cookie-parser": "^1.4.7",
     "drizzle-orm": "^0.45.4",
@@ -27,6 +29,7 @@
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "socket.io": "^4.8.4",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -38,6 +41,7 @@
     "@types/supertest": "^7.2.1",
     "concurrently": "^10.0.5",
     "drizzle-kit": "^0.31.11",
+    "socket.io-client": "^4.8.4",
     "supertest": "^7.3.1",
     "typescript": "~5.9",
     "unplugin-swc": "^2.0.0",

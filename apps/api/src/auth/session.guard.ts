@@ -20,6 +20,8 @@ export class SessionGuard implements CanActivate {
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
+    // les sockets (temps réel) sont authentifiés une fois, à la connexion, par la passerelle (live.gateway.ts)
+    if (ctx.getType() !== 'http') return true;
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [ctx.getHandler(), ctx.getClass()]);
     if (isPublic) return true;
     const http = ctx.switchToHttp();

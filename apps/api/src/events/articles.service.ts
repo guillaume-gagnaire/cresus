@@ -4,6 +4,7 @@ import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { AppError, notFound } from '../common/app-error.js';
 import { DB, type Db } from '../db/db.module.js';
 import { type ArticleRow, articles, sales } from '../db/schema.js';
+import { LiveBus } from '../live/live.bus.js';
 import { EventsService } from './events.service.js';
 import { toArticleDto } from './mappers.js';
 import { uuidParam } from './schemas.js';
@@ -17,6 +18,7 @@ export class ArticlesService {
   constructor(
     @Inject(DB) private readonly db: Db,
     private readonly events: EventsService,
+    private readonly live: LiveBus,
   ) {}
 
   /** Article non archivé de l'évènement du compte, sinon 404. */
@@ -43,6 +45,7 @@ export class ArticlesService {
         position: sql`(select coalesce(max(${articles.position}) + 1, 0) from ${articles} where ${articles.eventId} = ${event.id})`,
       })
       .returning();
+    this.live.changed(event.id);
     return toArticleDto(row!);
   }
 
@@ -51,6 +54,7 @@ export class ArticlesService {
     const values = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
     if (Object.keys(values).length === 0) return toArticleDto(article);
     const [row] = await this.db.update(articles).set(values).where(eq(articles.id, article.id)).returning();
+    this.live.changed(article.eventId);
     return toArticleDto(row!);
   }
 
@@ -74,6 +78,7 @@ export class ArticlesService {
       .from(articles)
       .where(and(eq(articles.eventId, event.id), isNull(articles.archivedAt)))
       .orderBy(asc(articles.position));
+    this.live.changed(event.id);
     return rows.map(toArticleDto);
   }
 
@@ -87,5 +92,6 @@ export class ArticlesService {
       .limit(1);
     if (sold) await this.db.update(articles).set({ archivedAt: new Date(), onSale: false }).where(eq(articles.id, article.id));
     else await this.db.delete(articles).where(eq(articles.id, article.id));
+    this.live.changed(article.eventId);
   }
 }
