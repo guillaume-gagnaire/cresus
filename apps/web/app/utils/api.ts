@@ -22,8 +22,13 @@ export const UNAUTHENTICATED_EVENT = 'cresus:unauthenticated';
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
+export interface RequestOptions {
+  /** Un 401 ne déconnecte pas l'appareil (envoi des ventes : la caisse reste ouverte et affiche « Reconnexion »). */
+  quiet401?: boolean;
+}
+
 /** Appel JSON vers /api. Les mutations envoient un corps JSON (protection CSRF côté API). */
-async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
+async function request<T>(method: Method, path: string, body?: unknown, options: RequestOptions = {}): Promise<T> {
   const hasBody = body !== undefined || (method !== 'GET' && method !== 'DELETE');
   let res: Response;
   try {
@@ -41,15 +46,15 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
   if (!res.ok) {
     // un proxy qui répond 502/503/504 pendant un redéploiement ou une coupure : traité comme hors ligne
     if (res.status >= 502 && res.status <= 504) throw new ApiError(0, 'OFFLINE', OFFLINE_MESSAGE);
-    if (res.status === 401 && !path.startsWith('/auth/')) window.dispatchEvent(new Event(UNAUTHENTICATED_EVENT));
+    if (res.status === 401 && !path.startsWith('/auth/') && !options.quiet401) window.dispatchEvent(new Event(UNAUTHENTICATED_EVENT));
     throw new ApiError(res.status, data?.code ?? 'UNKNOWN', data?.message ?? FALLBACK);
   }
   return data as T;
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>('GET', path),
-  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
+  get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, undefined, options),
+  post: <T>(path: string, body?: unknown, options?: RequestOptions) => request<T>('POST', path, body ?? {}, options),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   del: <T = void>(path: string, body?: unknown) => request<T>('DELETE', path, body),

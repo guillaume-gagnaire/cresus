@@ -64,5 +64,10 @@ export const useAuthStore = defineStore('auth', () => {
     set(null);
   }
 
-  return { account, ready, init, login, signup, logout, rename, changePassword, deleteAccount };
+  /** Session refusée par le serveur pendant la caisse : on oublie le compte localement (les ventes en attente restent). */
+  function expire(): void {
+    set(null);
+  }
+
+  return { account, ready, init, login, signup, logout, rename, changePassword, deleteAccount, expire };
 });
