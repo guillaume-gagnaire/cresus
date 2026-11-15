@@ -20,6 +20,13 @@ describe('durcissements', () => {
     expect(res.headers['x-powered-by']).toBeUndefined();
   });
 
+  it('demande aux moteurs de recherche de ne rien indexer ni suivre, sur toutes les réponses', async () => {
+    const ok = await request(app.getHttpServer()).get('/api/health').expect(200);
+    expect(ok.headers['x-robots-tag']).toBe('noindex, nofollow');
+    const missing = await request(app.getHttpServer()).get('/api/nope').expect(404);
+    expect(missing.headers['x-robots-tag']).toBe('noindex, nofollow');
+  });
+
   it('refuse une mutation qui n’est pas en JSON', async () => {
     const res = await request(app.getHttpServer()).post('/api/auth/login').set('Content-Type', 'text/plain').send('x').expect(415);
     expect(res.body.code).toBe('JSON_REQUIRED');

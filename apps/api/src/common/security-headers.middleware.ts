@@ -5,7 +5,7 @@ const HSTS = 'max-age=31536000; includeSubDomains';
 
 /**
  * En-têtes de sécurité sur toutes les réponses (API et front servi par l'API), sans dépendance :
- * pas de détection de type MIME, pas de referrer complet vers d'autres sites, pas d'affichage dans une iframe.
+ * pas de détection de type MIME, pas de referrer complet vers d'autres sites, pas d'affichage dans une iframe, pas d'indexation.
  * HSTS seulement en production : il engagerait le navigateur à n'utiliser que HTTPS pour ce domaine, y compris en local.
  */
 export function securityHeaders(options: { production: boolean }): (req: Request, res: Response, next: NextFunction) => void {
@@ -13,6 +13,8 @@ export function securityHeaders(options: { production: boolean }): (req: Request
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('X-Frame-Options', 'DENY');
+    // site privé des assos : jamais indexé ni suivi par les moteurs de recherche (aussi en meta et dans robots.txt côté front)
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     if (options.production) res.setHeader('Strict-Transport-Security', HSTS);
     next();
   };
