@@ -133,7 +133,7 @@ function switchTo(next: 'login' | 'signup'): void {
   padding: 12px 14px;
   border-radius: 14px;
   background: var(--coral-tint);
-  color: #8f2410;
+  color: var(--error-ink);
   font-weight: 800;
 }
 .forgot {

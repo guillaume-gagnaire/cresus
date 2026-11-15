@@ -145,7 +145,7 @@ h2 {
 .error {
   padding: 12px 14px;
   font-weight: 800;
-  color: #8f2410;
+  color: var(--error-ink);
 }
 .events {
   list-style: none;

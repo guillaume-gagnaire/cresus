@@ -139,6 +139,6 @@ h1 {
 }
 .error {
   font-weight: 800;
-  color: #8f2410;
+  color: var(--error-ink);
 }
 </style>

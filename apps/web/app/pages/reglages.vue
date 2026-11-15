@@ -168,7 +168,7 @@ h2 {
   font-weight: 600;
 }
 .error {
-  color: #8f2410;
+  color: var(--error-ink);
   font-weight: 800;
 }
 </style>
