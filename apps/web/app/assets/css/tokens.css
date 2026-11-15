@@ -1,0 +1,36 @@
+/* Direction C « Appli chaleureuse » (maquette validée, apps/web/.impeccable/surfaces/app.md).
+   Le corail est réservé à ce qui se touche : onglet actif, bouton principal, compteur de l'article touché. */
+:root {
+  --ground: #fbe9e3;
+  --ground-deep: #f6e3dc;
+  --card: #ffffff;
+  --ink: #1f1512;
+  --text: #3b2a26;
+  --muted: #6b4f48;
+  --placeholder: #8a6e66;
+  --rule: #f3ded6;
+  --field: #e8cfc6;
+  --coral: #cf3519;
+  --coral-pressed: #a82a13;
+  --coral-tint: #fff6f3;
+  --ok: #1e9e57;
+  --wait: #b45309;
+  --bar: #8c5a4d;
+  --track-off: #d9c3bb;
+
+  --radius-card: 24px;
+  --radius-big: 28px;
+  --radius-field: 14px;
+  --radius-button: 16px;
+
+  --shadow-card: 0 4px 14px rgba(59, 42, 38, 0.08);
+  --shadow-raised: 0 8px 24px rgba(59, 42, 38, 0.1);
+  --shadow-toast: 0 12px 28px rgba(31, 21, 18, 0.3);
+  --shadow-touched: 0 0 0 3px var(--coral), 0 8px 18px rgba(207, 53, 25, 0.2);
+
+  --font: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --tabbar-h: 82px;
+}

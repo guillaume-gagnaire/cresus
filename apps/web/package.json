@@ -1,0 +1,33 @@
+{
+  "name": "@cresus/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --port 3000",
+    "build": "nuxt generate",
+    "preview": "nuxt preview",
+    "typecheck": "nuxt typecheck",
+    "postinstall": "nuxt prepare",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@cresus/shared": "^0.1.0",
+    "@fontsource-variable/nunito": "^5.3.0",
+    "@pinia/nuxt": "^1.0.3",
+    "nuxt": "^4.6.4",
+    "pinia": "^4.1.0",
+    "socket.io-client": "^4.8.1",
+    "vue": "^3.5.43",
+    "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@vite-pwa/nuxt": "^1.1.1",
+    "exceljs": "^4.4.0",
+    "typescript": "~5.9",
+    "vitest": "^5.1.0",
+    "vue-tsc": "^3.3.14"
+  }
+}
