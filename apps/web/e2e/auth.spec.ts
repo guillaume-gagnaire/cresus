@@ -56,3 +56,13 @@ test('le site demande à ne pas être indexé', async ({ page }) => {
   const robots = await page.request.get('/robots.txt');
   expect(await robots.text()).toContain('Disallow: /');
 });
+
+test('l’appli ouverte prolonge la session toutes les 5 minutes', async ({ page }) => {
+  await page.clock.install();
+  await freshAccount(page);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Vos évènements' })).toBeVisible();
+  const keepAlive = page.waitForRequest((req) => req.url().endsWith('/api/auth/me'));
+  await page.clock.fastForward('05:01');
+  await keepAlive;
+});

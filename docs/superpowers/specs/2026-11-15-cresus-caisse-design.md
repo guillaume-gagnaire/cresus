@@ -35,7 +35,7 @@ Panier, rendu de monnaie, moyens de paiement, fonds de caisse ; comptes bénévo
 ### 4.1 Compte (asso)
 
 - Inscription : nom de l'asso, email, mot de passe (≥ 8 caractères). Email unique (insensible à la casse). Inscription ouverte.
-- Connexion : email + mot de passe. La session dure longtemps (180 jours, prolongée à l'usage) pour qu'un bénévole ne retape pas le mot de passe à chaque kermesse.
+- Connexion : email + mot de passe. La session dure 24 h et se prolonge à l'usage : tant que l'appli est ouverte, elle est rallongée toutes les 5 minutes (demande de Guillaume, la sécurité n'étant pas critique).
 - Réglages : modifier le nom de l'asso, changer le mot de passe (déconnecte les **autres** appareils), se déconnecter, supprimer le compte (mot de passe demandé, supprime tout).
 - Mot de passe oublié : pas de parcours en v1. L'écran de connexion le dit. L'administrateur du serveur peut réinitialiser un mot de passe en ligne de commande (`npm run reset-password -w @cresus/api -- <email>`, utilisable depuis le terminal Coolify).
 

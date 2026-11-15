@@ -20,7 +20,7 @@
 - Date d'évènement `YYYY-MM-DD` ; heures affichées et exportées en `Europe/Paris`.
 - Erreurs d'API : `{ statusCode, code, message }` ; un objet d'un autre compte répond 404 `NOT_FOUND`.
 - Mutations sous `/api` : `Content-Type: application/json` obligatoire (415 sinon).
-- Session : cookie `cresus_session`, `httpOnly`, `SameSite=Lax`, `Secure` en production, durée 180 jours glissante ; seul le hash SHA-256 du jeton est stocké.
+- Session : cookie `cresus_session`, `httpOnly`, `SameSite=Lax`, `Secure` en production, durée 24 h prolongée à l'usage (au plus toutes les 5 minutes, et l'appli ouverte la rappelle toutes les 5 minutes) ; seul le hash SHA-256 du jeton est stocké.
 - Nom d'article 1–40 caractères (après trim), nom d'asso 1–60, nom d'évènement 1–60, mot de passe 8–200.
 - Pictos : clés = noms Fluent Emoji (ex. `pancakes`), fichiers `apps/web/public/pictos/<clé>.svg`, picto générique `label` ; affichés par `<img>`, jamais insérés dans le DOM.
 - Pas d'envoi d'email, pas d'OAuth/MCP, pas de passkeys.

@@ -3,10 +3,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, gt, ne } from 'drizzle-orm';
 import { DB, type Db } from '../db/db.module.js';
 import { sessions } from '../db/schema.js';
-import { SESSION_TTL_MS } from './cookies.js';
+import { SESSION_RENEW_MS, SESSION_TTL_MS } from './cookies.js';
 
 export const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');
-const DAY_MS = 24 * 3600 * 1000;
 
 export interface ValidSession {
   accountId: string;
@@ -24,12 +23,12 @@ export class SessionService {
     return token;
   }
 
-  /** Renvoie la session si elle est valide, et prolonge l'expiration (glissante, au plus une fois par jour). */
+  /** Renvoie la session si elle est valide, et prolonge l'expiration de 24 h (glissante, au plus toutes les 5 minutes). */
   async validate(token: string): Promise<ValidSession | null> {
     const id = hashToken(token);
     const [row] = await this.db.select().from(sessions).where(and(eq(sessions.id, id), gt(sessions.expiresAt, new Date())));
     if (!row) return null;
-    const renewed = row.expiresAt.getTime() - Date.now() < SESSION_TTL_MS - DAY_MS;
+    const renewed = row.expiresAt.getTime() - Date.now() < SESSION_TTL_MS - SESSION_RENEW_MS;
     if (renewed) {
       await this.db.update(sessions).set({ expiresAt: new Date(Date.now() + SESSION_TTL_MS) }).where(eq(sessions.id, id));
     }
